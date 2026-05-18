@@ -1,0 +1,3 @@
+# Purpose: Apache rewrite rules to route all requests to index.php (front controller).
+# Website Section: Web Server Config.
+# Developer Notes: Enable URL rewriting and secure public directory access as needed.
