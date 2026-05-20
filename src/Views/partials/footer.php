@@ -79,8 +79,8 @@ $renderFooterMarkup = isset($renderFooterMarkup) ? (bool) $renderFooterMarkup : 
 <?php endif; ?>
 
 <script src="js/vendor/flatpickr.min.js?v=20260407-1" defer></script>
-<script src="js/admin-booking-modals.js?v=20260406-2" defer></script>
-<script src="js/app.js?v=20260408-1" defer></script>
+<script src="js/admin-booking-modals.js?v=20260517-real-single-gps" defer></script>
+<script src="js/app.js?v=20260517-real-single-gps" defer></script>
 <script src="js/user-register-modals.js?v=20260408-1" defer></script>
 <script src="js/booking.js?v=20260408-1" defer></script>
 <?php if ($footerIsAdminPage): ?>
@@ -89,7 +89,10 @@ $renderFooterMarkup = isset($renderFooterMarkup) ? (bool) $renderFooterMarkup : 
 	<script src="../charts/fleet_chart.js?v=20260406-1" defer></script>
 	<script src="js/admin-dashboard.js?v=20260406-4" defer></script>
 	<script src="js/admin-bookings-search.js?v=20260406-3" defer></script>
+<?php if (in_array($footerCurrentPage, ['admin-live-tracking', 'admin-all-bookings'], true)): ?>
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<?php endif; ?>
 <?php if ($footerCurrentPage === 'admin-live-tracking'): ?>
-	<script src="js/admin-live-tracking-map.js?v=20260408-1" defer></script>
+	<script src="js/admin-live-tracking-map.js?v=20260514-gps-1" defer></script>
 <?php endif; ?>
 <?php endif; ?>

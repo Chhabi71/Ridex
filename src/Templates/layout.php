@@ -26,9 +26,12 @@ $isUserAuthenticated = (($layoutSessionUser['role'] ?? '') === 'user');
 		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
 	/>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+	<?php if (in_array($currentPage, ['admin-live-tracking', 'admin-all-bookings'], true)): ?>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<?php endif; ?>
 	<link rel="stylesheet" href="css/styles.css?v=20260408-1" />
 	<link rel="stylesheet" href="css/booking.css?v=20260408-1" />
-	<link rel="stylesheet" href="css/admin.css?v=20260408-2" />
+	<link rel="stylesheet" href="css/admin.css?v=20260517-real-single-gps" />
 	<link rel="stylesheet" href="css/user.css?v=20260407-8" />
 </head>
 <body
@@ -63,5 +66,10 @@ $isUserAuthenticated = (($layoutSessionUser['role'] ?? '') === 'user');
 
 	<?php $renderFooterMarkup = empty($hideFooter); ?>
 	<?php include __DIR__ . '/../Views/partials/footer.php'; ?>
+
+	<?php if (!$isAdminPage): ?>
+		<?php include __DIR__ . '/../Views/partials/chatbot.php'; ?>
+		<script src="js/chatbot.js?v=20260514-3" defer></script>
+	<?php endif; ?>
 </body>
 </html>

@@ -306,10 +306,10 @@ $resolveBookingStatus = static function (string $statusKey) use ($bookingStatusM
 
 $formatTotal = static function ($amount): string {
 	if (!is_numeric($amount)) {
-		return '$0.00';
+		return 'NRs 0.00';
 	}
 
-	return '$' . number_format((float) $amount, 2);
+	return 'NRs ' . number_format((float) $amount, 2);
 };
 
 ?>
@@ -322,6 +322,7 @@ $formatTotal = static function ($amount): string {
 				<a class="admin-sidebar__link" href="index.php?page=admin-manage-fleet">Manage Fleet</a>
 				<a class="admin-sidebar__link is-active" href="index.php?page=admin-all-bookings" aria-current="page">All Bookings</a>
 				<a class="admin-sidebar__link" href="index.php?page=admin-live-tracking">Live Tracking</a>
+				<a class="admin-sidebar__link" href="index.php?page=admin-user-verifications">User Verification</a>
 			</nav>
 		</aside>
 
@@ -453,9 +454,9 @@ $formatTotal = static function ($amount): string {
 									$hasGpsSignal = $gpsLatitude !== null
 										&& $gpsLongitude !== null
 										&& (abs($gpsLatitude) > 0.00001 || abs($gpsLongitude) > 0.00001);
-									$trackLocationLabel = $returnLocation !== 'Unavailable' ? $returnLocation : $pickupLocation;
-									if ($trackLocationLabel === 'Unavailable' && $hasGpsSignal) {
-										$trackLocationLabel = number_format((float) $gpsLatitude, 5, '.', '') . ', ' . number_format((float) $gpsLongitude, 5, '.', '');
+									$trackLocationLabel = 'No GPS signal';
+									if ($hasGpsSignal) {
+										$trackLocationLabel = '' . number_format((float) $gpsLatitude, 5, '.', '') . ', ' . number_format((float) $gpsLongitude, 5, '.', '');
 									}
 
 									$trackMapQuery = '';
@@ -467,10 +468,12 @@ $formatTotal = static function ($amount): string {
 									$trackMapUrl = $trackMapQuery !== ''
 										? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($trackMapQuery)
 										: '';
-									$canTrackBooking = in_array($effectiveBookingStatus, ['reserved', 'on_trip', 'overdue'], true)
+									// Admin tracking should only be available for vehicles that are currently on rent.
+									$canTrackBooking = in_array($effectiveBookingStatus, ['on_trip', 'overdue'], true)
 										&& $vehicleStatusKey !== 'unavailable'
+										&& $vehicleId > 0
 										&& !$isReturnedBooking;
-									$isTrackDisabled = $effectiveBookingStatus === 'reserved' || $vehicleId <= 0;
+									$isTrackDisabled = !$canTrackBooking;
 									$autoOpenBookingModal = $openBookingId > 0 && $openBookingId === $bookingId;
 									$totalAmount = $formatTotal($booking['total_amount'] ?? 0);
 									?>
@@ -616,15 +619,15 @@ $formatTotal = static function ($amount): string {
 						<p class="admin-booking-read-modal__billing-heading">Price details</p>
 						<div class="admin-booking-read-modal__billing-row">
 							<span>Price per day</span>
-							<span data-booking-read-price-per-day>$0.00</span>
+							<span data-booking-read-price-per-day>NRs 0.00</span>
 						</div>
 						<div class="admin-booking-read-modal__billing-row">
 							<span data-booking-read-duration-label>Price for 1 day</span>
-							<span data-booking-read-duration-price>$0.00</span>
+							<span data-booking-read-duration-price>NRs 0.00</span>
 						</div>
 						<div class="admin-booking-read-modal__billing-row">
 							<span>Drop charge</span>
-							<span data-booking-read-drop-charge>$0.00</span>
+							<span data-booking-read-drop-charge>NRs 0.00</span>
 						</div>
 						<div class="admin-booking-read-modal__billing-row">
 							<span>Late Fee</span>
@@ -632,11 +635,11 @@ $formatTotal = static function ($amount): string {
 						</div>
 						<div class="admin-booking-read-modal__billing-row">
 							<span>Taxes &amp; Fees</span>
-							<span data-booking-read-taxes-fees>$0.00</span>
+							<span data-booking-read-taxes-fees>NRs 0.00</span>
 						</div>
 						<div class="admin-booking-read-modal__billing-row admin-booking-read-modal__billing-row--total">
 							<span>Total</span>
-							<strong data-booking-read-billing-total>$0.00</strong>
+							<strong data-booking-read-billing-total>NRs 0.00</strong>
 						</div>
 					</div>
 				</div>
@@ -690,7 +693,7 @@ $formatTotal = static function ($amount): string {
 					</div>
 				</form>
 
-				<p class="admin-booking-read-modal__late-fee-note" data-booking-late-fee-preview hidden>Late fee: $0.00 (0h x $10)</p>
+				<p class="admin-booking-read-modal__late-fee-note" data-booking-late-fee-preview hidden>Late fee: NRs 0.00 (0h x $10)</p>
 			</div>
 
 			<div class="admin-booking-read-modal__actions">
@@ -751,7 +754,7 @@ $formatTotal = static function ($amount): string {
 				</p>
 			</div>
 
-			<div class="admin-booking-track-modal__map" data-booking-track-map>
+			<div class="admin-booking-track-modal__map" data-booking-track-map data-single-booking-gps-map data-feed-url="ajax/gps-live-feed.php">
 				<div class="admin-booking-track-modal__route" data-booking-track-route></div>
 				<span class="admin-booking-track-modal__pin admin-booking-track-modal__pin--pickup" data-booking-track-pickup-pin></span>
 				<span class="admin-booking-track-modal__pin admin-booking-track-modal__pin--return" data-booking-track-return-pin></span>

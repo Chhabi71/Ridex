@@ -78,6 +78,7 @@ if ($fleetMode === 'status') {
 				<a class="admin-sidebar__link is-active" href="index.php?page=admin-manage-fleet" aria-current="page">Manage Fleet</a>
 				<a class="admin-sidebar__link" href="index.php?page=admin-all-bookings">All Bookings</a>
 				<a class="admin-sidebar__link" href="index.php?page=admin-live-tracking">Live Tracking</a>
+				<a class="admin-sidebar__link" href="index.php?page=admin-user-verifications">User Verification</a>
 			</nav>
 		</aside>
 

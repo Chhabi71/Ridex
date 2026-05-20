@@ -57,7 +57,7 @@ $taxesAndFees = (int) ($bookingPriceBreakdown['taxes_and_fees'] ?? 0);
 $totalAmount = (int) ($bookingPriceBreakdown['total_amount'] ?? 0);
 
 $formatAmount = static function ($amount): string {
-	return '$' . number_format((float) $amount, 2);
+	return 'NRs ' . number_format((float) $amount, 2);
 };
 
 $payOnArrivalPostData = array_merge(
@@ -85,7 +85,12 @@ $khaltiPostData = array_merge(
 
 <section class="booking-checkout" aria-label="Booking checkout">
 	<?php if ($bookingNotice !== ''): ?>
-		<div class="booking-checkout__alert" role="alert"><?= htmlspecialchars($bookingNotice, ENT_QUOTES, 'UTF-8') ?></div>
+		<div class="booking-checkout__alert" role="alert">
+			<?= htmlspecialchars($bookingNotice, ENT_QUOTES, 'UTF-8') ?>
+			<?php if ($bookingCheckoutPayNowDisabled): ?>
+				<br><strong>Booking is locked until both email verification and admin ID-photo verification are complete.</strong>
+			<?php endif; ?>
+		</div>
 	<?php endif; ?>
 
 	<?php if (!is_array($checkoutVehicle)): ?>
@@ -161,7 +166,7 @@ $khaltiPostData = array_merge(
 									value="<?= htmlspecialchars((string) $postValue, ENT_QUOTES, 'UTF-8') ?>"
 								/>
 							<?php endforeach; ?>
-							<button class="booking-payment-card__pay-arrival" type="submit">Pay on Arrival</button>
+							<button class="booking-payment-card__pay-arrival" type="submit" <?= $bookingCheckoutPayNowDisabled ? 'disabled aria-disabled="true"' : '' ?>>Pay on Arrival</button>
 						</form>
 
 						<!-- Pay Now with Khalti -->
@@ -173,7 +178,7 @@ $khaltiPostData = array_merge(
 									value="<?= htmlspecialchars((string) $postValue, ENT_QUOTES, 'UTF-8') ?>"
 								/>
 							<?php endforeach; ?>
-							<button class="booking-payment-card__pay-now" type="submit">Pay Now</button>
+							<button class="booking-payment-card__pay-now" type="submit" <?= $bookingCheckoutPayNowDisabled ? 'disabled aria-disabled="true"' : '' ?>>Pay Now</button>
 						</form>
 					</div>
 				</aside>
@@ -182,7 +187,7 @@ $khaltiPostData = array_merge(
 
 		<div class="booking-checkout__fee-notice">
 			<p class="booking-checkout__fee-text">
-				Late fee: <strong>$10/h</strong> applicable after scheduled return.*
+				Late fee: <strong>NRs 10/h</strong> applicable after scheduled return.*
 			</p>
 		</div>
 	<?php endif; ?>

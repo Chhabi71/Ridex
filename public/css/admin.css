@@ -3799,3 +3799,2879 @@
     border-radius: 0 !important;
   }
 }
+
+/* GPS Live Tracking: Leaflet + risk management UI */
+.ridex-gps-page .admin-dashboard__content {
+  gap: 18px;
+}
+
+.ridex-gps-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  border: 1px solid rgba(76, 201, 84, 0.35);
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 255, 241, 0.96),
+    rgba(255, 255, 255, 0.98)
+  );
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.ridex-gps-eyebrow {
+  margin: 0 0 6px;
+  color: #1a8f2c;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ridex-gps-hero__text {
+  margin: 8px 0 0;
+  max-width: 760px;
+  color: #5b6670;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.ridex-gps-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.ridex-gps-button {
+  border: 1px solid rgba(25, 162, 49, 0.35);
+  background: #ffffff;
+  color: #18251c;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 8px 20px rgba(21, 62, 28, 0.08);
+}
+
+.ridex-gps-button:hover,
+.ridex-gps-button:focus-visible {
+  border-color: rgba(25, 162, 49, 0.75);
+  transform: translateY(-1px);
+}
+
+.ridex-gps-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.ridex-gps-button--primary {
+  background: #20a53a;
+  color: #ffffff;
+  border-color: #20a53a;
+}
+
+.ridex-gps-kpis {
+  margin-bottom: 18px;
+}
+
+.ridex-gps-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.75fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.ridex-gps-map-card,
+.ridex-gps-panel {
+  border: 1px solid rgba(76, 201, 84, 0.32);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(14, 46, 20, 0.08);
+  overflow: hidden;
+}
+
+.ridex-gps-map-card__header,
+.ridex-gps-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(76, 201, 84, 0.18);
+}
+
+.ridex-gps-map-card__header h2,
+.ridex-gps-panel__header h2 {
+  margin: 0;
+  color: #13191f;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ridex-gps-map-card__header p,
+.ridex-gps-panel__header p {
+  margin: 4px 0 0;
+  color: #65707a;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ridex-gps-status-pill {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #eef2f5;
+  color: #52606a;
+}
+
+.ridex-gps-status-pill.is-ok {
+  background: #e8f8ec;
+  color: #17752b;
+}
+
+.ridex-gps-status-pill.is-loading {
+  background: #fff8e4;
+  color: #947000;
+}
+
+.ridex-gps-status-pill.is-error {
+  background: #ffe9e9;
+  color: #b52121;
+}
+
+.ridex-gps-map {
+  width: 100%;
+  height: 560px;
+  background: #edf2f5;
+}
+
+.ridex-gps-map-error {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  text-align: center;
+  font-weight: 800;
+  color: #b52121;
+}
+
+.ridex-gps-map-help {
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(76, 201, 84, 0.18);
+  color: #65707a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ridex-gps-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+
+.ridex-gps-selected {
+  padding: 14px;
+  border-bottom: 1px solid rgba(76, 201, 84, 0.18);
+}
+
+.ridex-gps-list {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  max-height: 420px;
+}
+
+.ridex-gps-empty {
+  margin: 0;
+  border: 1px dashed rgba(35, 49, 61, 0.22);
+  border-radius: 14px;
+  padding: 16px;
+  color: #6a747c;
+  background: #f8faf9;
+  font-weight: 700;
+}
+
+.ridex-gps-vehicle-item {
+  width: 100%;
+  border: 1px solid rgba(31, 42, 51, 0.12);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+}
+
+.ridex-gps-vehicle-item:hover,
+.ridex-gps-vehicle-item:focus-visible,
+.ridex-gps-vehicle-item.is-selected {
+  border-color: rgba(32, 165, 58, 0.75);
+  box-shadow: 0 10px 25px rgba(32, 165, 58, 0.1);
+}
+
+.ridex-gps-vehicle-item__name {
+  color: #13191f;
+  font-weight: 900;
+}
+
+.ridex-gps-vehicle-item__meta {
+  color: #65707a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ridex-gps-detail-card {
+  border: 1px solid rgba(31, 42, 51, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  background: #f9fbfa;
+}
+
+.ridex-gps-detail-card--high {
+  border-color: rgba(198, 40, 40, 0.36);
+  background: #fff8f8;
+}
+
+.ridex-gps-detail-card--medium {
+  border-color: rgba(226, 159, 20, 0.4);
+  background: #fffaf0;
+}
+
+.ridex-gps-detail-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ridex-gps-detail-card h3 {
+  margin: 0;
+  color: #13191f;
+  font-size: 16px;
+}
+
+.ridex-gps-detail-card p {
+  margin: 3px 0 0;
+  color: #65707a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ridex-gps-detail-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.ridex-gps-detail-list div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.ridex-gps-detail-list dt {
+  color: #65707a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ridex-gps-detail-list dd {
+  margin: 0;
+  color: #182028;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ridex-gps-risk-badge {
+  width: max-content;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ridex-gps-risk-badge--low {
+  background: #e7f8ec;
+  color: #147029;
+}
+
+.ridex-gps-risk-badge--medium {
+  background: #fff2cf;
+  color: #8a6200;
+}
+
+.ridex-gps-risk-badge--high {
+  background: #ffe3e3;
+  color: #ad1e1e;
+}
+
+.ridex-gps-leaflet-marker {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.ridex-gps-leaflet-marker .material-symbols-rounded {
+  font-size: 23px;
+}
+
+.ridex-gps-leaflet-marker--low {
+  background: #20a53a;
+}
+
+.ridex-gps-leaflet-marker--medium {
+  background: #e09a00;
+}
+
+.ridex-gps-leaflet-marker--high {
+  background: #d32f2f;
+}
+
+.ridex-gps-popup {
+  display: grid;
+  gap: 3px;
+  min-width: 190px;
+  font-size: 12px;
+}
+
+.ridex-gps-popup strong {
+  font-size: 14px;
+  color: #111820;
+}
+
+@media (max-width: 1100px) {
+  .ridex-gps-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .ridex-gps-panel {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .ridex-gps-hero,
+  .ridex-gps-map-card__header,
+  .ridex-gps-panel__header,
+  .ridex-gps-detail-card__top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ridex-gps-hero__actions {
+    justify-content: flex-start;
+  }
+
+  .ridex-gps-map {
+    height: 430px;
+  }
+
+  .ridex-gps-detail-list div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* GPS Live Tracking UI cleanup: match admin layout and keep KPI row compact */
+.ridex-gps-page .admin-dashboard__content {
+  gap: 16px;
+}
+
+.ridex-gps-hero {
+  align-items: center;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(76, 201, 84, 0.28);
+  box-shadow: none;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+
+.ridex-gps-page .admin-dashboard__title {
+  font-size: clamp(34px, 3vw, 54px);
+  line-height: 1.04;
+}
+
+.ridex-gps-hero__text {
+  max-width: 680px;
+  font-size: 13px;
+}
+
+.ridex-gps-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ridex-gps-kpis .admin-kpi-card {
+  min-height: 120px;
+  padding: 16px;
+}
+
+.ridex-gps-shell {
+  gap: 16px;
+}
+
+.ridex-gps-map-card,
+.ridex-gps-panel {
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .ridex-gps-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ridex-gps-hero {
+    padding: 14px;
+  }
+
+  .ridex-gps-page .admin-dashboard__title {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
+  .ridex-gps-hero__actions {
+    width: 100%;
+  }
+
+  .ridex-gps-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ridex-gps-kpis .admin-kpi-card {
+    min-height: 112px;
+  }
+}
+
+/* Single booking live GPS modal: use the same real Leaflet/OpenStreetMap map as Live Tracking. */
+.admin-booking-track-modal__map.is-leaflet-map {
+  background: #eef5ee;
+}
+
+.admin-booking-track-modal__map.is-leaflet-map .leaflet-container,
+.admin-booking-track-modal__map.is-leaflet-map .leaflet-pane,
+.admin-booking-track-modal__map.is-leaflet-map .leaflet-top,
+.admin-booking-track-modal__map.is-leaflet-map .leaflet-bottom {
+  z-index: 1;
+}
+
+.admin-booking-track-modal__map.is-leaflet-map
+  .admin-booking-track-modal__route,
+.admin-booking-track-modal__map.is-leaflet-map .admin-booking-track-modal__pin {
+  display: none !important;
+}
+
+.admin-booking-track-modal__map.is-leaflet-map
+  .admin-booking-track-modal__open-maps,
+.admin-booking-track-modal__map.is-leaflet-map
+  .admin-booking-track-modal__map-empty {
+  z-index: 450;
+}
+
+.admin-booking-track-modal__leaflet-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #36df2e;
+  color: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.admin-booking-track-modal__popup {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.admin-booking-track-modal__popup strong {
+  font-size: 13px;
+}
+
+/* Final admin box sizing cleanup: keep Dashboard and Live Tracking consistent */
+.admin-dashboard__content,
+.ridex-gps-page .admin-dashboard__content {
+  padding: 18px 42px 44px 36px;
+}
+
+.admin-kpi-grid,
+.ridex-gps-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px;
+  margin-bottom: 22px;
+}
+
+.admin-kpi-card,
+.ridex-gps-kpis .admin-kpi-card {
+  min-height: 170px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+}
+
+.admin-chart-card,
+.ridex-gps-map-card,
+.ridex-gps-panel {
+  border: 1px solid #4bc954;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.admin-chart-card,
+.ridex-gps-map-card {
+  min-height: 360px;
+}
+
+.ridex-gps-shell {
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.ridex-gps-map {
+  height: 360px;
+  min-height: 360px;
+}
+
+.ridex-gps-panel {
+  min-height: 360px;
+}
+
+.ridex-gps-list {
+  max-height: 260px;
+}
+
+.ridex-gps-map-help {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .ridex-gps-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .ridex-gps-map,
+  .ridex-gps-panel {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-kpi-grid,
+  .ridex-gps-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-kpi-grid,
+  .ridex-gps-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .ridex-gps-map {
+    height: 430px;
+  }
+}
+
+/* Final GPS theme cleanup: plain page heading, dashboard-size KPI cards, themed map popups */
+.ridex-gps-page .ridex-gps-hero {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 22px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.ridex-gps-page .ridex-gps-eyebrow,
+.ridex-gps-page .ridex-gps-hero__text,
+.ridex-gps-map-help {
+  display: none !important;
+}
+
+.ridex-gps-page .admin-dashboard__title {
+  margin: 0 !important;
+  color: #0c0c0c;
+  font-size: clamp(42px, 3.2vw, 60px) !important;
+  line-height: 1.02 !important;
+  font-weight: 680 !important;
+}
+
+.ridex-gps-kpis .admin-kpi-card {
+  min-height: 170px !important;
+  padding: 14px 14px 12px !important;
+  border-radius: 14px !important;
+  border: 1px solid #4bc954 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.ridex-gps-kpis .admin-kpi-card__header h2 {
+  margin: 0;
+  color: #111111;
+  font-size: clamp(14px, 1.05vw, 18px);
+  font-weight: 500;
+}
+
+.ridex-gps-kpis .admin-kpi-card__value {
+  margin: 0;
+  color: #101010;
+  font-size: clamp(36px, 2.2vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.ridex-gps-map-card,
+.ridex-gps-panel {
+  border: 1px solid #4bc954 !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+.ridex-gps-map-card__header p,
+.ridex-gps-panel__header p {
+  display: none !important;
+}
+
+.ridex-gps-map-card__header,
+.ridex-gps-panel__header {
+  border-bottom: 0 !important;
+  padding: 16px 18px 10px !important;
+}
+
+.ridex-gps-popup {
+  min-width: 145px !important;
+  max-width: 190px !important;
+  display: grid !important;
+  gap: 4px !important;
+  text-align: center !important;
+  color: #111111 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.ridex-gps-popup strong {
+  color: #111111 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+.ridex-gps-page .leaflet-popup-content-wrapper {
+  border: 1px solid #4bc954 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: none !important;
+}
+
+.ridex-gps-page .leaflet-popup-tip {
+  border: 1px solid #4bc954 !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: none !important;
+}
+
+.ridex-gps-page .leaflet-popup-content {
+  margin: 12px 18px !important;
+}
+
+.ridex-gps-page .leaflet-popup-close-button {
+  color: #1ca51b !important;
+}
+
+.admin-booking-track-modal__popup {
+  text-align: center !important;
+  color: #111111 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.admin-booking-track-modal__popup strong {
+  color: #111111 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+.admin-booking-track-modal__map .leaflet-popup-content-wrapper {
+  border: 1px solid #4bc954 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: none !important;
+}
+
+.admin-booking-track-modal__map .leaflet-popup-tip {
+  border: 1px solid #4bc954 !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 760px) {
+  .ridex-gps-page .ridex-gps-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+/* RIDEX glass effect for live location popups only */
+.ridex-gps-page .leaflet-popup-content-wrapper,
+.admin-booking-track-modal__map .leaflet-popup-content-wrapper {
+  background: rgba(217, 217, 217, 0.2) !important;
+  border: 2px solid #39d929 !important;
+  border-radius: 18px !important;
+  backdrop-filter: blur(3px) brightness(100%) saturate(80%) !important;
+  -webkit-backdrop-filter: blur(3px) brightness(100%) saturate(80%) !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 1px 0 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    inset -1px 0 2px rgba(0, 0, 0, 0.16) !important;
+  color: #000 !important;
+}
+
+.ridex-gps-page .leaflet-popup-tip,
+.admin-booking-track-modal__map .leaflet-popup-tip {
+  background: rgba(217, 217, 217, 0.2) !important;
+  border: 2px solid #39d929 !important;
+  backdrop-filter: blur(3px) brightness(100%) saturate(80%) !important;
+  -webkit-backdrop-filter: blur(3px) brightness(100%) saturate(80%) !important;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 1px 0 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    inset -1px 0 2px rgba(0, 0, 0, 0.16) !important;
+}
+
+.ridex-gps-page .leaflet-popup-content,
+.admin-booking-track-modal__map .leaflet-popup-content {
+  margin: 18px 22px !important;
+}
+
+.ridex-gps-popup,
+.admin-booking-track-modal__popup {
+  color: #000 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+.ridex-gps-page .leaflet-popup-close-button,
+.admin-booking-track-modal__map .leaflet-popup-close-button {
+  color: #000 !important;
+}
+
+/* Admin user verifications */
+.admin-verifications__content {
+  padding-top: 18px;
+}
+
+.admin-verifications__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.admin-verifications__title {
+  margin-bottom: 0;
+}
+
+.admin-verifications__filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-verifications__filter {
+  height: 36px;
+  min-width: 118px;
+  border: 1px solid var(--color-main-secondary);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #111;
+  background: #fff;
+  text-decoration: none;
+  font-size: clamp(16px, 1.05vw, 20px);
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-verifications__filter.is-active,
+.admin-verifications__filter:hover,
+.admin-verifications__filter:focus-visible {
+  background: var(--color-main);
+  border-color: var(--color-main);
+  color: #fff;
+  outline: none;
+}
+
+.admin-verifications__kpis {
+  margin-bottom: 22px;
+}
+
+.admin-verifications__table-card {
+  border: 1px solid #4bc954;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.admin-verifications__table {
+  width: 100%;
+  min-width: 1060px;
+  border-collapse: collapse;
+  color: #111;
+}
+
+.admin-verifications__table th,
+.admin-verifications__table td {
+  border-right: 1px solid #cfcfcf;
+  border-bottom: 1px solid #cfcfcf;
+  padding: 16px 18px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: clamp(14px, 1vw, 18px);
+}
+
+.admin-verifications__table th:last-child,
+.admin-verifications__table td:last-child {
+  border-right: 0;
+}
+
+.admin-verifications__table thead th {
+  background: #d9d9d9;
+  font-weight: 900;
+  color: #000;
+}
+
+.admin-verifications__table td:nth-child(7),
+.admin-verifications__table th:nth-child(7) {
+  width: 170px;
+  text-align: center;
+}
+
+.admin-verifications__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 210px;
+}
+
+.admin-verifications__user strong,
+.admin-verifications__user span {
+  display: block;
+}
+
+.admin-verifications__user span:not(.admin-verifications__avatar) {
+  color: #777;
+  font-size: 0.88em;
+  margin-top: 3px;
+}
+
+.admin-verifications__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #eaffea;
+  color: #26aa2e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+}
+
+.admin-verifications__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 6px 16px;
+  color: #fff;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  font-size: 18px;
+}
+
+.admin-verifications__status--pending {
+  background: #f5a400;
+}
+.admin-verifications__status--verified {
+  background: #45e234;
+}
+.admin-verifications__status--rejected {
+  background: #e53935;
+}
+
+.admin-verifications__view,
+.admin-verifications__action-btn {
+  width: 120px;
+  min-height: 42px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  padding: 8px 16px;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-verifications__view {
+  background: #fff;
+  border-color: #45e234;
+  color: #26aa2e;
+}
+
+.admin-verifications__approve {
+  background: #45e234;
+  color: #fff;
+}
+
+.admin-verifications__reject {
+  background: #fff;
+  border-color: #e53935;
+  color: #e53935;
+}
+
+.admin-verifications__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-verifications__actions form {
+  margin: 0;
+}
+
+.admin-verifications__missing,
+.admin-verifications__empty {
+  color: #777;
+  font-weight: 700;
+}
+
+.admin-verification-doc-modal[hidden] {
+  display: none;
+}
+
+.admin-verification-doc-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.admin-verification-doc-modal__dialog {
+  position: relative;
+  width: min(720px, 100%);
+  border: 2px solid #45e234;
+  border-radius: 18px;
+  background: rgba(217, 217, 217, 0.2);
+  backdrop-filter: blur(3px) brightness(100%) saturate(80%);
+  -webkit-backdrop-filter: blur(3px) brightness(100%) saturate(80%);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.18);
+  padding: 28px;
+  color: #000;
+}
+
+.admin-verification-doc-modal__dialog h2 {
+  margin: 0 0 4px;
+  font-size: clamp(28px, 2vw, 42px);
+}
+
+.admin-verification-doc-modal__dialog p {
+  margin: 0 0 18px;
+  color: #333;
+  font-weight: 700;
+}
+
+.admin-verification-doc-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 0;
+  background: #45e234;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.admin-verification-doc-modal__image-wrap {
+  min-height: 360px;
+  border-radius: 14px;
+  border: 1px solid rgba(69, 226, 52, 0.65);
+  background: rgba(255, 255, 255, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.admin-verification-doc-modal__image-wrap img {
+  display: block;
+  max-width: 100%;
+  max-height: 68vh;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .admin-verifications__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .admin-verifications__table-card {
+    overflow-x: auto;
+  }
+  .admin-verifications__table {
+    min-width: 860px;
+  }
+}
+
+/* === RIDEX User Verification table alignment fix === */
+.admin-verifications__table {
+  table-layout: fixed;
+  min-width: 1280px;
+}
+
+.admin-verifications__table th,
+.admin-verifications__table td {
+  overflow: hidden;
+}
+
+.admin-verifications__table th:nth-child(1),
+.admin-verifications__table td:nth-child(1) {
+  width: 230px;
+}
+.admin-verifications__table th:nth-child(2),
+.admin-verifications__table td:nth-child(2) {
+  width: 280px;
+}
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3) {
+  width: 220px;
+}
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4) {
+  width: 190px;
+  text-align: center;
+}
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5) {
+  width: 180px;
+  text-align: center;
+}
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6) {
+  width: 140px;
+  text-align: center;
+}
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  width: 170px;
+  text-align: center;
+}
+
+.admin-verifications__cell-user,
+.admin-verifications__cell-status,
+.admin-verifications__cell-doc,
+.admin-verifications__cell-date,
+.admin-verifications__cell-actions {
+  vertical-align: middle;
+}
+
+.admin-verifications__user {
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+}
+
+.admin-verifications__user > div {
+  min-width: 0;
+}
+
+.admin-verifications__user strong,
+.admin-verifications__user span:not(.admin-verifications__avatar) {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-verifications__email {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.admin-verifications__status {
+  width: 165px;
+  max-width: 100%;
+  padding: 7px 12px;
+  gap: 7px;
+  line-height: 1;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.admin-verifications__view,
+.admin-verifications__action-btn {
+  width: 120px;
+  height: 42px;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+/* === RIDEX User Verification table professional responsive layout final === */
+.admin-verifications__table-card {
+  width: 100%;
+  overflow: hidden;
+}
+
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-verifications__table.admin-bookings__table {
+  width: 100%;
+  min-width: 1460px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.admin-verifications__table.admin-bookings__table th,
+.admin-verifications__table.admin-bookings__table td {
+  box-sizing: border-box;
+  padding: 22px 16px;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.admin-verifications__table.admin-bookings__table tbody tr {
+  height: 126px;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(1),
+.admin-verifications__table.admin-bookings__table td:nth-child(1) {
+  width: 285px;
+  min-width: 285px;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(2),
+.admin-verifications__table.admin-bookings__table td:nth-child(2) {
+  width: 300px;
+  min-width: 300px;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(3),
+.admin-verifications__table.admin-bookings__table td:nth-child(3) {
+  width: 210px;
+  min-width: 210px;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(4),
+.admin-verifications__table.admin-bookings__table td:nth-child(4) {
+  width: 190px;
+  min-width: 190px;
+  text-align: center;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(5),
+.admin-verifications__table.admin-bookings__table td:nth-child(5) {
+  width: 185px;
+  min-width: 185px;
+  text-align: center;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(6),
+.admin-verifications__table.admin-bookings__table td:nth-child(6) {
+  width: 150px;
+  min-width: 150px;
+  text-align: center;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(7),
+.admin-verifications__table.admin-bookings__table td:nth-child(7) {
+  width: 140px;
+  min-width: 140px;
+  text-align: center;
+}
+
+.admin-verifications__cell-user,
+.admin-verifications__cell-email,
+.admin-verifications__cell-status,
+.admin-verifications__cell-doc,
+.admin-verifications__cell-date,
+.admin-verifications__cell-actions {
+  vertical-align: middle !important;
+}
+
+.admin-verifications__user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-verifications__avatar {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaffea;
+  color: #23b52d;
+  font-size: 28px;
+}
+
+.admin-verifications__user-info {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  line-height: 1.15;
+}
+
+.admin-verifications__user-name,
+.admin-verifications__user-phone {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-verifications__user-name {
+  color: #000;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.admin-verifications__user-phone {
+  color: #777;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-verifications__cell-email {
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+}
+
+.admin-verifications__email {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #000;
+  line-height: 1.4;
+  font-size: 16px;
+}
+
+.admin-verifications__cell-status {
+  text-align: center;
+}
+
+.admin-verifications__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-width: 150px;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  flex: 0 0 auto;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.admin-verifications__view {
+  width: 126px;
+  height: 54px;
+  min-height: 54px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.admin-verifications__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.admin-verifications__actions form {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.admin-verifications__action-btn {
+  width: 108px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  box-sizing: border-box;
+  font-size: 16px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-verifications__cell-date {
+  font-size: 16px;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+@media (max-width: 1280px) {
+  .admin-verifications__table.admin-bookings__table {
+    min-width: 1360px;
+  }
+  .admin-verifications__table.admin-bookings__table th:nth-child(1),
+  .admin-verifications__table.admin-bookings__table td:nth-child(1) {
+    width: 265px;
+    min-width: 265px;
+  }
+  .admin-verifications__table.admin-bookings__table th:nth-child(2),
+  .admin-verifications__table.admin-bookings__table td:nth-child(2) {
+    width: 275px;
+    min-width: 275px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-verifications__table.admin-bookings__table {
+    min-width: 1180px;
+  }
+  .admin-verifications__table.admin-bookings__table th,
+  .admin-verifications__table.admin-bookings__table td {
+    padding: 18px 12px;
+  }
+}
+
+/* === RIDEX FINAL: user verification table no-horizontal-scroll compact layout === */
+.admin-verifications__table-card,
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+
+.admin-verifications__table.admin-bookings__table,
+.admin-verifications__table {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.admin-verifications__table.admin-bookings__table th,
+.admin-verifications__table.admin-bookings__table td,
+.admin-verifications__table th,
+.admin-verifications__table td {
+  box-sizing: border-box !important;
+  padding: 12px 10px !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  font-size: clamp(12px, 0.85vw, 15px) !important;
+  line-height: 1.25 !important;
+}
+
+.admin-verifications__table.admin-bookings__table tbody tr,
+.admin-verifications__table tbody tr {
+  height: 88px !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(1),
+.admin-verifications__table.admin-bookings__table td:nth-child(1),
+.admin-verifications__table th:nth-child(1),
+.admin-verifications__table td:nth-child(1) {
+  width: 16% !important;
+  min-width: 0 !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(2),
+.admin-verifications__table.admin-bookings__table td:nth-child(2),
+.admin-verifications__table th:nth-child(2),
+.admin-verifications__table td:nth-child(2) {
+  width: 18% !important;
+  min-width: 0 !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(3),
+.admin-verifications__table.admin-bookings__table td:nth-child(3),
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3) {
+  width: 15% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(4),
+.admin-verifications__table.admin-bookings__table td:nth-child(4),
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4) {
+  width: 13% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(5),
+.admin-verifications__table.admin-bookings__table td:nth-child(5),
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5) {
+  width: 13% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(6),
+.admin-verifications__table.admin-bookings__table td:nth-child(6),
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6) {
+  width: 11% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(7),
+.admin-verifications__table.admin-bookings__table td:nth-child(7),
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  width: 10% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+
+.admin-verifications__user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.admin-verifications__avatar {
+  width: 36px !important;
+  height: 36px !important;
+  flex: 0 0 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__user-info {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+.admin-verifications__user-name,
+.admin-verifications__user-phone {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.admin-verifications__user-name {
+  font-size: clamp(12px, 0.9vw, 15px) !important;
+  font-weight: 900 !important;
+  color: #000 !important;
+}
+
+.admin-verifications__user-phone {
+  font-size: clamp(11px, 0.78vw, 13px) !important;
+  color: #777 !important;
+  font-weight: 500 !important;
+}
+
+.admin-verifications__email {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: clamp(12px, 0.85vw, 14px) !important;
+  line-height: 1.25 !important;
+}
+
+.admin-verifications__status {
+  width: 100% !important;
+  max-width: 138px !important;
+  min-width: 0 !important;
+  min-height: 32px !important;
+  padding: 6px 8px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  font-size: clamp(11px, 0.8vw, 13px) !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  flex: 0 0 auto !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__view {
+  width: 94px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-size: clamp(12px, 0.85vw, 14px) !important;
+  line-height: 1.05 !important;
+}
+
+.admin-verifications__actions {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+}
+
+.admin-verifications__actions form {
+  width: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.admin-verifications__action-btn {
+  width: 94px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  font-size: clamp(12px, 0.85vw, 14px) !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+.admin-verifications__cell-date {
+  white-space: normal !important;
+  font-size: clamp(12px, 0.85vw, 14px) !important;
+  line-height: 1.25 !important;
+}
+
+@media (max-width: 1180px) {
+  .admin-verifications__table.admin-bookings__table th,
+  .admin-verifications__table.admin-bookings__table td,
+  .admin-verifications__table th,
+  .admin-verifications__table td {
+    padding: 10px 7px !important;
+  }
+
+  .admin-verifications__avatar {
+    width: 32px !important;
+    height: 32px !important;
+    flex-basis: 32px !important;
+    font-size: 20px !important;
+  }
+
+  .admin-verifications__status {
+    max-width: 124px !important;
+    font-size: 11px !important;
+  }
+
+  .admin-verifications__view,
+  .admin-verifications__action-btn {
+    width: 84px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* === RIDEX verification document modal image loading fix === */
+.admin-verification-doc-modal__image-wrap {
+  position: relative !important;
+}
+
+.admin-verification-doc-modal__image-wrap img {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 68vh !important;
+  object-fit: contain !important;
+}
+
+.admin-verification-doc-modal__image-wrap img[hidden],
+.admin-verification-doc-modal__message[hidden] {
+  display: none !important;
+}
+
+.admin-verification-doc-modal__message {
+  width: 100%;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #555;
+  font-weight: 900;
+  font-size: clamp(16px, 1.4vw, 22px);
+  padding: 28px;
+}
+
+/* === RIDEX FINAL FIX: Verification page heading + no-scroll responsive table === */
+.admin-verifications__content {
+  padding-top: 18px !important;
+}
+.admin-verifications__toolbar {
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  gap: 14px !important;
+  margin-bottom: 26px !important;
+}
+.admin-verifications__title {
+  display: block !important;
+  margin: 0 !important;
+  line-height: 1.02 !important;
+  font-size: clamp(42px, 3.2vw, 60px) !important;
+  font-weight: 680 !important;
+  color: #0c0c0c !important;
+}
+.admin-verifications__table-card,
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+.admin-verifications__table.admin-bookings__table,
+.admin-verifications__table {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+.admin-verifications__table.admin-bookings__table th,
+.admin-verifications__table.admin-bookings__table td,
+.admin-verifications__table th,
+.admin-verifications__table td {
+  box-sizing: border-box !important;
+  padding: 11px 8px !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  font-size: clamp(11px, 0.78vw, 14px) !important;
+  line-height: 1.2 !important;
+}
+.admin-verifications__table.admin-bookings__table tbody tr,
+.admin-verifications__table tbody tr {
+  height: 82px !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(1),
+.admin-verifications__table.admin-bookings__table td:nth-child(1),
+.admin-verifications__table th:nth-child(1),
+.admin-verifications__table td:nth-child(1) {
+  width: 15% !important;
+  min-width: 0 !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(2),
+.admin-verifications__table.admin-bookings__table td:nth-child(2),
+.admin-verifications__table th:nth-child(2),
+.admin-verifications__table td:nth-child(2) {
+  width: 17% !important;
+  min-width: 0 !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(3),
+.admin-verifications__table.admin-bookings__table td:nth-child(3),
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3) {
+  width: 14% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(4),
+.admin-verifications__table.admin-bookings__table td:nth-child(4),
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4) {
+  width: 12% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(5),
+.admin-verifications__table.admin-bookings__table td:nth-child(5),
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5) {
+  width: 12% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(6),
+.admin-verifications__table.admin-bookings__table td:nth-child(6),
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6) {
+  width: 10% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+}
+.admin-verifications__table.admin-bookings__table th:nth-child(7),
+.admin-verifications__table.admin-bookings__table td:nth-child(7),
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  min-width: 0 !important;
+  text-align: center !important;
+}
+.admin-verifications__user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+.admin-verifications__avatar {
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+.admin-verifications__user-info {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+.admin-verifications__user-name,
+.admin-verifications__user-phone,
+.admin-verifications__email {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.admin-verifications__user-name {
+  font-size: clamp(11px, 0.82vw, 14px) !important;
+  font-weight: 900 !important;
+  color: #000 !important;
+}
+.admin-verifications__user-phone {
+  font-size: clamp(10px, 0.72vw, 12px) !important;
+  color: #777 !important;
+  font-weight: 500 !important;
+}
+.admin-verifications__email {
+  font-size: clamp(11px, 0.78vw, 13px) !important;
+  line-height: 1.25 !important;
+}
+.admin-verifications__status {
+  max-width: 112px !important;
+  min-width: 0 !important;
+  min-height: 30px !important;
+  padding: 5px 7px !important;
+  font-size: clamp(10px, 0.72vw, 12px) !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+}
+.admin-verifications__status .material-symbols-rounded {
+  font-size: 15px !important;
+  line-height: 1 !important;
+  flex: 0 0 auto !important;
+}
+.admin-verifications__view {
+  width: 84px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 7px !important;
+  font-size: clamp(10px, 0.75vw, 12px) !important;
+  line-height: 1.05 !important;
+}
+.admin-verifications__actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+.admin-verifications__actions form {
+  width: 100% !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+.admin-verifications__action-btn {
+  width: 82px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 7px !important;
+  border-radius: 999px !important;
+  font-size: clamp(10px, 0.75vw, 12px) !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+.admin-verifications__cell-date {
+  white-space: normal !important;
+  font-size: clamp(10px, 0.75vw, 12px) !important;
+  line-height: 1.2 !important;
+}
+@media (max-width: 1180px) {
+  .admin-verifications__table.admin-bookings__table th,
+  .admin-verifications__table.admin-bookings__table td,
+  .admin-verifications__table th,
+  .admin-verifications__table td {
+    padding: 9px 6px !important;
+  }
+  .admin-verifications__avatar {
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    font-size: 18px !important;
+  }
+  .admin-verifications__status {
+    max-width: 102px !important;
+    font-size: 10px !important;
+  }
+  .admin-verifications__view {
+    width: 76px !important;
+  }
+  .admin-verifications__action-btn {
+    width: 76px !important;
+  }
+}
+
+/* === FINAL: compact admin user verification table - no horizontal scroll === */
+.admin-verifications__content {
+  max-width: calc(100vw - 330px);
+  overflow: hidden;
+}
+.admin-verifications__toolbar {
+  margin-bottom: 18px;
+  align-items: flex-start;
+  gap: 18px;
+}
+.admin-verifications__title {
+  display: block;
+  margin: 0;
+  font-size: clamp(38px, 4vw, 56px);
+  line-height: 1.05;
+  position: relative;
+  z-index: 1;
+}
+.admin-verifications__table-card {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #38dd2f;
+  border-radius: 16px;
+}
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  overflow-x: hidden;
+  width: 100%;
+}
+.admin-verifications__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.admin-verifications__table th,
+.admin-verifications__table td {
+  padding: 12px 14px;
+  overflow: hidden;
+  vertical-align: middle;
+  font-size: 14px;
+}
+.admin-verifications__table th:nth-child(1) {
+  width: 19%;
+}
+.admin-verifications__table th:nth-child(2) {
+  width: 19%;
+}
+.admin-verifications__table th:nth-child(3) {
+  width: 14%;
+}
+.admin-verifications__table th:nth-child(4) {
+  width: 13%;
+}
+.admin-verifications__table th:nth-child(5) {
+  width: 12%;
+}
+.admin-verifications__table th:nth-child(6) {
+  width: 10%;
+}
+.admin-verifications__table th:nth-child(7) {
+  width: 13%;
+}
+.admin-verifications__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.admin-verifications__avatar {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ffe8;
+  color: #16a51b;
+  font-size: 22px !important;
+  line-height: 1;
+}
+.admin-verifications__user-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 2px;
+}
+.admin-verifications__user-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.admin-verifications__user-phone {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #777;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.admin-verifications__email {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.admin-verifications__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  max-width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.admin-verifications__status .material-symbols-rounded {
+  font-size: 17px !important;
+  line-height: 1;
+}
+.admin-verifications__view {
+  width: 102px;
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid #39d929;
+  background: #fff;
+  color: #16a51b;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.admin-verifications__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.admin-verifications__actions form {
+  margin: 0;
+}
+.admin-verifications__action-btn {
+  width: 108px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-verifications__cell-date {
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.admin-verification-doc-modal__dialog {
+  margin-top: 64px;
+}
+@media (max-width: 1100px) {
+  .admin-verifications__content {
+    max-width: calc(100vw - 280px);
+  }
+  .admin-verifications__table th,
+  .admin-verifications__table td {
+    padding: 10px 9px;
+    font-size: 13px;
+  }
+  .admin-verifications__status {
+    font-size: 12px;
+    padding: 0 8px;
+  }
+  .admin-verifications__view {
+    width: 88px;
+    height: 38px;
+    font-size: 13px;
+  }
+  .admin-verifications__action-btn {
+    width: 92px;
+    height: 34px;
+    font-size: 13px;
+  }
+  .admin-verifications__avatar {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+  .admin-verifications__user-name {
+    font-size: 13px;
+  }
+  .admin-verifications__user-phone {
+    font-size: 11px;
+  }
+}
+
+/* === FINAL OVERRIDE: admin user verification table alignment + responsive fit === */
+.admin-verifications__content {
+  max-width: none !important;
+  width: calc(100% - var(--admin-sidebar-width)) !important;
+  overflow: visible !important;
+  padding-left: clamp(14px, 2.2vw, 36px) !important;
+  padding-right: clamp(14px, 2.2vw, 42px) !important;
+}
+
+.admin-verifications__table-card,
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+}
+
+.admin-verifications__table.admin-bookings__table,
+.admin-verifications__table {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.admin-verifications__table thead th,
+.admin-verifications__table.admin-bookings__table thead th {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 12px 8px !important;
+  font-size: clamp(12px, 0.9vw, 15px) !important;
+  line-height: 1.12 !important;
+  height: 56px !important;
+  white-space: normal !important;
+}
+
+.admin-verifications__table td,
+.admin-verifications__table.admin-bookings__table td {
+  padding: 10px 8px !important;
+  height: 82px !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  font-size: clamp(11px, 0.82vw, 14px) !important;
+}
+
+.admin-verifications__table th:nth-child(1),
+.admin-verifications__table td:nth-child(1) {
+  width: 17% !important;
+}
+.admin-verifications__table th:nth-child(2),
+.admin-verifications__table td:nth-child(2) {
+  width: 18% !important;
+}
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3) {
+  width: 14% !important;
+  text-align: center !important;
+}
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4) {
+  width: 13% !important;
+  text-align: center !important;
+}
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5) {
+  width: 12% !important;
+  text-align: center !important;
+}
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6) {
+  width: 10% !important;
+  text-align: center !important;
+}
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  width: 16% !important;
+  text-align: center !important;
+}
+
+.admin-verifications__cell-user,
+.admin-verifications__cell-email {
+  text-align: left !important;
+}
+
+.admin-verifications__user {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.admin-verifications__avatar {
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__user-info {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  line-height: 1.15 !important;
+}
+
+.admin-verifications__user-name,
+.admin-verifications__user-phone,
+.admin-verifications__email {
+  display: block !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.admin-verifications__user-name {
+  font-size: clamp(11px, 0.82vw, 14px) !important;
+  font-weight: 900 !important;
+  color: #000 !important;
+}
+
+.admin-verifications__user-phone {
+  font-size: clamp(10px, 0.72vw, 12px) !important;
+  color: #777 !important;
+}
+
+.admin-verifications__email {
+  font-size: clamp(11px, 0.78vw, 13px) !important;
+  color: #000 !important;
+}
+
+.admin-verifications__status {
+  width: min(100%, 116px) !important;
+  min-width: 0 !important;
+  max-width: 116px !important;
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 7px !important;
+  gap: 4px !important;
+  border-radius: 999px !important;
+  font-size: clamp(9px, 0.72vw, 12px) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  font-size: 15px !important;
+  flex: 0 0 auto !important;
+}
+
+.admin-verifications__view {
+  width: min(92px, 100%) !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 6px !important;
+  font-size: clamp(10px, 0.76vw, 12px) !important;
+  line-height: 1.05 !important;
+}
+
+.admin-verifications__actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.admin-verifications__actions form {
+  margin: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+.admin-verifications__action-btn {
+  width: min(86px, 100%) !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 6px !important;
+  font-size: clamp(10px, 0.76vw, 12px) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.admin-verifications__cell-date {
+  font-size: clamp(10px, 0.76vw, 12px) !important;
+  line-height: 1.15 !important;
+  white-space: normal !important;
+}
+
+.admin-verification-doc-modal__dialog h2,
+.admin-verification-doc-modal__dialog p {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55) !important;
+}
+
+@media (max-width: 1280px) {
+  .admin-page {
+    --admin-sidebar-width: 230px;
+  }
+  .admin-sidebar {
+    padding-left: 16px !important;
+    padding-right: 12px !important;
+  }
+  .admin-sidebar__link {
+    font-size: clamp(16px, 1.35vw, 20px) !important;
+    padding: 9px 12px !important;
+  }
+  .admin-verifications__content {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .admin-verifications__table td,
+  .admin-verifications__table.admin-bookings__table td {
+    padding: 8px 5px !important;
+    height: 76px !important;
+  }
+  .admin-verifications__table thead th {
+    padding: 10px 5px !important;
+    height: 52px !important;
+    font-size: 11px !important;
+  }
+  .admin-verifications__avatar {
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    font-size: 18px !important;
+  }
+  .admin-verifications__user {
+    gap: 6px !important;
+  }
+  .admin-verifications__status {
+    max-width: 98px !important;
+    height: 28px !important;
+    font-size: 9.5px !important;
+    padding: 0 5px !important;
+  }
+  .admin-verifications__status .material-symbols-rounded {
+    font-size: 13px !important;
+  }
+  .admin-verifications__view {
+    width: 74px !important;
+    height: 30px !important;
+    font-size: 10px !important;
+  }
+  .admin-verifications__action-btn {
+    width: 72px !important;
+    height: 29px !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-verifications__content {
+    width: 100% !important;
+    margin-left: 0 !important;
+    padding: 14px 10px 28px !important;
+  }
+  .admin-verifications__title {
+    font-size: 34px !important;
+  }
+  .admin-verifications__toolbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .admin-verifications__table th:nth-child(1),
+  .admin-verifications__table td:nth-child(1) {
+    width: 18% !important;
+  }
+  .admin-verifications__table th:nth-child(2),
+  .admin-verifications__table td:nth-child(2) {
+    width: 18% !important;
+  }
+  .admin-verifications__table th:nth-child(3),
+  .admin-verifications__table td:nth-child(3) {
+    width: 14% !important;
+  }
+  .admin-verifications__table th:nth-child(4),
+  .admin-verifications__table td:nth-child(4) {
+    width: 13% !important;
+  }
+  .admin-verifications__table th:nth-child(5),
+  .admin-verifications__table td:nth-child(5) {
+    width: 12% !important;
+  }
+  .admin-verifications__table th:nth-child(6),
+  .admin-verifications__table td:nth-child(6) {
+    width: 9% !important;
+  }
+  .admin-verifications__table th:nth-child(7),
+  .admin-verifications__table td:nth-child(7) {
+    width: 16% !important;
+  }
+}
+
+/* === RIDEX FINAL CLEANUP: verification table should behave like All Bookings table === */
+.admin-verifications__table-card {
+  width: 100% !important;
+  overflow: hidden !important;
+  border: 1px solid #9e9e9e !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.admin-verifications__table-card .admin-bookings__table-scroll {
+  width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.admin-verifications__table.admin-bookings__table,
+.admin-verifications__table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.admin-verifications__table.admin-bookings__table thead th,
+.admin-verifications__table thead th {
+  text-align: left !important;
+  padding: 0.72rem 0.92rem !important;
+  background: #e2e2e2 !important;
+  border-right: 1px solid #9e9e9e !important;
+  border-bottom: 1px solid #9e9e9e !important;
+  color: #111111 !important;
+  font-size: clamp(1rem, 0.86vw, 1.16rem) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  line-height: 1.15 !important;
+}
+
+.admin-verifications__table.admin-bookings__table tbody td,
+.admin-verifications__table tbody td {
+  padding: 0.66rem 0.92rem !important;
+  background: #ffffff !important;
+  border-right: 1px solid #9e9e9e !important;
+  border-bottom: 1px solid #9e9e9e !important;
+  color: #141414 !important;
+  font-size: clamp(0.96rem, 0.78vw, 1.08rem) !important;
+  font-weight: 400 !important;
+  line-height: 1.22 !important;
+  vertical-align: middle !important;
+  overflow: visible !important;
+  text-align: left !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.admin-verifications__table th:last-child,
+.admin-verifications__table td:last-child {
+  border-right: none !important;
+  width: 1% !important;
+  white-space: nowrap !important;
+}
+
+.admin-verifications__table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.admin-verifications__table th:nth-child(1),
+.admin-verifications__table td:nth-child(1) {
+  width: 18% !important;
+}
+.admin-verifications__table th:nth-child(2),
+.admin-verifications__table td:nth-child(2) {
+  width: 24% !important;
+}
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3) {
+  width: 14% !important;
+}
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4) {
+  width: 14% !important;
+}
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5) {
+  width: 12% !important;
+}
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6) {
+  width: 10% !important;
+}
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  width: 8% !important;
+}
+
+.admin-verifications__table tbody tr {
+  height: auto !important;
+}
+
+.admin-verifications__user {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.admin-verifications__avatar {
+  display: none !important;
+}
+
+.admin-verifications__user-info {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+.admin-verifications__user-name,
+.admin-verifications__user-phone,
+.admin-verifications__email {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.admin-verifications__user-name {
+  font-weight: 600 !important;
+  font-size: inherit !important;
+  color: #000 !important;
+}
+
+.admin-verifications__user-phone {
+  color: #666 !important;
+  font-size: 0.86em !important;
+  font-weight: 400 !important;
+}
+
+.admin-verifications__email {
+  font-size: inherit !important;
+}
+
+.admin-verifications__cell-status,
+.admin-verifications__cell-doc,
+.admin-verifications__cell-date,
+.admin-verifications__cell-actions {
+  text-align: center !important;
+}
+
+.admin-verifications__status {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  width: auto !important;
+  min-width: 96px !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  padding: 0.24rem 0.8rem !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  font-size: clamp(0.8rem, 0.66vw, 0.94rem) !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__status .material-symbols-rounded {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+.admin-verifications__view,
+.admin-verifications__action-btn {
+  width: min(100%, 92px) !important;
+  min-height: 30px !important;
+  padding: 0.3rem 0.5rem !important;
+  border-radius: 999px !important;
+  font-size: clamp(0.85rem, 0.7vw, 0.98rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+}
+
+.admin-verifications__view {
+  font-size: clamp(0.8rem, 0.66vw, 0.9rem) !important;
+  padding: 0.28rem 0.48rem !important;
+}
+
+.admin-verifications__actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: auto !important;
+}
+
+.admin-verifications__actions form {
+  margin: 0 !important;
+}
+
+.admin-verifications__missing {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: min(100%, 92px) !important;
+  min-height: 30px !important;
+  padding: 0.3rem 0.5rem !important;
+  color: #606060 !important;
+  font-weight: 600 !important;
+  font-size: clamp(0.85rem, 0.7vw, 0.98rem) !important;
+  line-height: 1.1 !important;
+}
+
+/* Verification table: match fleet pill sizing + left-align all headers/cells */
+.admin-verifications__filter {
+  height: 36px !important;
+  min-width: 118px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--color-main-secondary) !important;
+  font-size: clamp(16px, 1.05vw, 20px) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.admin-verifications__filter.is-active,
+.admin-verifications__filter:hover,
+.admin-verifications__filter:focus-visible {
+  background: var(--color-main) !important;
+  border-color: var(--color-main) !important;
+}
+
+.admin-verifications__table thead th,
+.admin-verifications__table.admin-bookings__table thead th,
+.admin-verifications__table tbody td,
+.admin-verifications__table.admin-bookings__table tbody td {
+  text-align: left !important;
+}
+
+.admin-verifications__cell-status,
+.admin-verifications__cell-doc,
+.admin-verifications__cell-date,
+.admin-verifications__cell-actions {
+  text-align: left !important;
+}
+
+.admin-verifications__status {
+  justify-content: flex-start !important;
+}
+
+.admin-verifications__actions {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+.admin-verifications__actions form {
+  justify-content: flex-start !important;
+}
+
+/* Final override: left-align all verification table headers and cells */
+.admin-verifications__table.admin-bookings__table th,
+.admin-verifications__table.admin-bookings__table td,
+.admin-verifications__table th,
+.admin-verifications__table td {
+  text-align: left !important;
+}
+
+.admin-verifications__table.admin-bookings__table th:nth-child(3),
+.admin-verifications__table.admin-bookings__table td:nth-child(3),
+.admin-verifications__table.admin-bookings__table th:nth-child(4),
+.admin-verifications__table.admin-bookings__table td:nth-child(4),
+.admin-verifications__table.admin-bookings__table th:nth-child(5),
+.admin-verifications__table.admin-bookings__table td:nth-child(5),
+.admin-verifications__table.admin-bookings__table th:nth-child(6),
+.admin-verifications__table.admin-bookings__table td:nth-child(6),
+.admin-verifications__table.admin-bookings__table th:nth-child(7),
+.admin-verifications__table.admin-bookings__table td:nth-child(7),
+.admin-verifications__table th:nth-child(3),
+.admin-verifications__table td:nth-child(3),
+.admin-verifications__table th:nth-child(4),
+.admin-verifications__table td:nth-child(4),
+.admin-verifications__table th:nth-child(5),
+.admin-verifications__table td:nth-child(5),
+.admin-verifications__table th:nth-child(6),
+.admin-verifications__table td:nth-child(6),
+.admin-verifications__table th:nth-child(7),
+.admin-verifications__table td:nth-child(7) {
+  text-align: left !important;
+}
+
+.admin-verifications__cell-status,
+.admin-verifications__cell-doc,
+.admin-verifications__cell-date,
+.admin-verifications__cell-actions {
+  text-align: left !important;
+}
+
+.admin-verifications__status {
+  justify-content: flex-start !important;
+}
+
+.admin-verifications__actions,
+.admin-verifications__actions form {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+.admin-verifications__table thead th,
+.admin-verifications__table.admin-bookings__table thead th {
+  text-align: left !important;
+}
+
+.admin-verifications__table thead th:nth-child(3),
+.admin-verifications__table thead th:nth-child(4),
+.admin-verifications__table thead th:nth-child(5),
+.admin-verifications__table thead th:nth-child(6),
+.admin-verifications__table thead th:nth-child(7) {
+  text-align: left !important;
+}
+
+/* Keep the document preview title readable over the glass overlay */
+.admin-verification-doc-modal__dialog h2,
+.admin-verification-doc-modal__dialog p {
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Admin footer mobile fix: no side offset and no squeezed right-column footer */
+@media (max-width: 900px) {
+  .admin-page .site-footer {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-top: 16px !important;
+    border-radius: 0 !important;
+  }
+
+  .admin-page .site-footer__inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .admin-page .site-footer__top,
+  .admin-page .site-footer__grid,
+  .admin-page .site-footer__bottom {
+    width: 100% !important;
+  }
+
+  .admin-page .site-footer__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-page .site-footer__grid {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-page .site-footer__top,
+  .admin-page .site-footer__bottom {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+}
+
+/* Live tracking map height cleanup: remove large blank area under map */
+.ridex-gps-map-card {
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+.ridex-gps-map {
+  height: 420px !important;
+  min-height: 420px !important;
+  max-height: 420px !important;
+}
+
+@media (max-width: 900px) {
+  .ridex-gps-map {
+    height: 380px !important;
+    min-height: 380px !important;
+    max-height: 380px !important;
+  }
+}
+
+/* Admin profile: obvious way back to admin dashboard after visiting home */
+.admin-profile-modal__dashboard {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 46px !important;
+  margin: 12px 0 10px !important;
+  border-radius: 999px !important;
+  background: #45e234 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-weight: 800 !important;
+}
+
+.site-header__brand-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+}

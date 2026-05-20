@@ -13,6 +13,7 @@ $bookingFlowHomeUrl = trim((string) ($bookingFlowHomeUrl ?? 'index.php'));
 if ($bookingFlowHomeUrl === '') {
 	$bookingFlowHomeUrl = 'index.php';
 }
+$bookingPaymentNotice = trim((string) ($bookingPaymentNotice ?? ''));
 
 $bookingNumber = trim((string) ($bookingReceiptModalData['booking_number'] ?? ''));
 if ($bookingNumber === '') {
@@ -35,6 +36,11 @@ $vehicleName = trim((string) ($bookingReceiptRow['vehicle_full_name'] ?? $bookin
 			Your booking <?= htmlspecialchars($bookingNumber, ENT_QUOTES, 'UTF-8') ?> for
 			<?= htmlspecialchars($vehicleName, ENT_QUOTES, 'UTF-8') ?> has been confirmed.
 		</p>
+		<?php if ($bookingPaymentNotice !== ''): ?>
+			<p class="booking-thanks__text booking-thanks__text--warning" role="alert">
+				<?= htmlspecialchars($bookingPaymentNotice, ENT_QUOTES, 'UTF-8') ?>
+			</p>
+		<?php endif; ?>
 		<p class="booking-thanks__text">
 			Download your receipt
 			<button class="booking-thanks__link" type="button" data-modal-target="user-booking-bill-modal">here</button>.

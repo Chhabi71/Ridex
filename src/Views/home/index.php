@@ -4,6 +4,7 @@
 */
 
 $featuredVehicles = $featuredVehicles ?? [];
+$recommendedVehicles = $recommendedVehicles ?? [];
 $selectedHomeVehicleType = $selectedHomeVehicleType ?? 'cars';
 $homeVehicleTypeLabels = [
 	'cars' => 'Cars',
@@ -108,6 +109,24 @@ $selectedHomeVehicleTypeLabel = strtolower($homeVehicleTypeLabels[$selectedHomeV
 		</div>
 	</form>
 </section>
+
+
+<?php if (!empty($recommendedVehicles)): ?>
+<section class="category-section recommendation-section" aria-label="Recommended vehicles">
+	<div class="recommendation-section__header">
+		<div>
+			<p class="recommendation-section__eyebrow">AI-inspired picks</p>
+			<h2 class="recommendation-section__title">Recommended for You</h2>
+		</div>
+		<p class="recommendation-section__copy">Ranked using local booking data, vehicle type, price, mileage, and popularity.</p>
+	</div>
+	<div class="vehicle-grid">
+		<?php foreach ($recommendedVehicles as $vehicle): ?>
+			<?php include __DIR__ . '/vehicle-card.php'; ?>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
 
 <section class="category-section" id="home-vehicle-category" aria-label="Featured vehicles by category">
 	<div class="category-tabs" role="tablist" aria-label="Vehicle categories">

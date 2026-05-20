@@ -915,6 +915,18 @@
   font-weight: 500;
 }
 
+
+.booking-thanks__text--warning {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 14px 18px;
+  border: 2px solid var(--color-main-secondary);
+  border-radius: 18px;
+  background: rgba(217, 217, 217, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #0f2410;
+}
+
 .booking-thanks__link {
   border: none;
   background: transparent;
@@ -2059,4 +2071,16 @@
   .booking-filter.offcanvas.filter-visible {
     transform: translateX(0) !important;
   }
+}
+
+.booking-payment-card__pay-arrival:disabled,
+.booking-payment-card__pay-now:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+.booking-payment-card__pay-arrival:disabled:hover,
+.booking-payment-card__pay-arrival:disabled:focus-visible {
+  background: #ffffff;
 }

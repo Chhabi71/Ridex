@@ -11,7 +11,7 @@ $selectedTransmissions = isset($selectedTransmissions) && is_array($selectedTran
 $selectedSeatsMin = max(0, (int) ($selectedSeatsMin ?? 0));
 $selectedPriceMin = max(0, (int) ($selectedPriceMin ?? 0));
 $selectedPriceMax = max(0, (int) ($selectedPriceMax ?? 0));
-$selectedSortPrice = strtolower(trim((string) ($selectedSortPrice ?? 'high')));
+$selectedSortPrice = strtolower(trim((string) ($selectedSortPrice ?? 'recommended')));
 $bookingSelectVehicles = isset($bookingSelectVehicles) && is_array($bookingSelectVehicles) ? $bookingSelectVehicles : [];
 $bookingNotice = trim((string) ($bookingNotice ?? ''));
 $bookingNoAvailabilityMessage = trim((string) ($bookingNoAvailabilityMessage ?? ''));
@@ -31,7 +31,7 @@ $isTransmissionChecked = static function (string $transmission, array $selectedT
 };
 
 $formatAmount = static function ($amount): string {
-	return '$' . number_format((float) $amount, 2);
+	return 'NRs ' . number_format((float) $amount, 2);
 };
 
 $resetQuery = array_merge(
@@ -149,8 +149,12 @@ $resetUrl = 'index.php?' . http_build_query($resetQuery);
 					<h1 class="booking-select-results__title"><?= htmlspecialchars($summaryType, ENT_QUOTES, 'UTF-8') ?> Selection</h1>
 					<p class="booking-select-results__subtitle">Available vehicles for your selected dates.</p>
 				</div>
-				<div class="booking-select-sort" role="group" aria-label="Sort by price">
-					<p class="booking-select-sort__label">Sort Price</p>
+				<div class="booking-select-sort" role="group" aria-label="Sort vehicles">
+					<p class="booking-select-sort__label">Sort By</p>
+					<label class="booking-select-sort__option">
+						<input type="radio" name="sort_price" value="recommended" form="booking-select-filter-form" <?= $selectedSortPrice === 'recommended' ? 'checked' : '' ?> onchange="this.form.submit()" />
+						<span>Recommended</span>
+					</label>
 					<label class="booking-select-sort__option">
 						<input type="radio" name="sort_price" value="low" form="booking-select-filter-form" <?= $selectedSortPrice === 'low' ? 'checked' : '' ?> onchange="this.form.submit()" />
 						<span>Low to High</span>
@@ -212,6 +216,15 @@ $resetUrl = 'index.php?' . http_build_query($resetQuery);
 						</div>
 						<div class="booking-select-card__body">
 							<h2 class="booking-select-card__name"><?= htmlspecialchars($vehicleFullName, ENT_QUOTES, 'UTF-8') ?></h2>
+							<?php if (isset($vehicle['recommendation_score'])): ?>
+								<p class="recommendation-badge">
+									<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+									Recommended Score: <?= htmlspecialchars((string) ((int) $vehicle['recommendation_score']), ENT_QUOTES, 'UTF-8') ?>
+								</p>
+								<?php if (!empty($vehicle['recommendation_reason'])): ?>
+									<p class="recommendation-reason"><?= htmlspecialchars((string) $vehicle['recommendation_reason'], ENT_QUOTES, 'UTF-8') ?></p>
+								<?php endif; ?>
+							<?php endif; ?>
 							<ul class="booking-select-card__meta" aria-label="Vehicle details">
 								<li><span class="material-symbols-rounded" aria-hidden="true">person</span><span><?= htmlspecialchars(($vehicleSeats > 0 ? $vehicleSeats : 0) . ' Seats', ENT_QUOTES, 'UTF-8') ?></span></li>
 								<li><span class="material-symbols-rounded" aria-hidden="true">settings</span><span><?= htmlspecialchars(ucfirst(strtolower($vehicleTransmission)), ENT_QUOTES, 'UTF-8') ?></span></li>

@@ -60,13 +60,19 @@ $detailUrl = 'index.php?' . http_build_query($detailQuery);
 	<div class="vehicle-card__headline-row">
 		<h3 class="vehicle-name"><?= htmlspecialchars($shortName, ENT_QUOTES, 'UTF-8') ?></h3>
 	</div>
+	<?php if (isset($vehicle['recommendation_score'])): ?>
+		<p class="recommendation-badge recommendation-badge--card">
+			<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+			Score <?= htmlspecialchars((string) ((int) $vehicle['recommendation_score']), ENT_QUOTES, 'UTF-8') ?>
+		</p>
+	<?php endif; ?>
 	<div class="vehicle-card__specs" aria-label="Vehicle specifications">
 		<span class="vehicle-card__spec-pill"><?= htmlspecialchars($seatLabel, ENT_QUOTES, 'UTF-8') ?></span>
 		<span class="vehicle-card__spec-pill"><?= htmlspecialchars($fuelLabel, ENT_QUOTES, 'UTF-8') ?></span>
 		<span class="vehicle-card__spec-pill"><?= htmlspecialchars($mileageLabel, ENT_QUOTES, 'UTF-8') ?></span>
 	</div>
 	<div class="vehicle-footer">
-		<div class="vehicle-price">$<?= htmlspecialchars($pricePerDay, ENT_QUOTES, 'UTF-8') ?> <span class="day-text">/ day</span></div>
+		<div class="vehicle-price">NRs <?= htmlspecialchars($pricePerDay, ENT_QUOTES, 'UTF-8') ?> <span class="day-text">/ day</span></div>
 		<button
 			class="book-button"
 			type="button"

@@ -663,7 +663,7 @@
       return getReadMissingFallback(statusKey, isUserRelated);
     }
 
-    return `$${numericValue.toFixed(2)}`;
+    return `NRs ${numericValue.toFixed(2)}`;
   };
 
   const escapeHtml = (rawValue) =>
@@ -790,7 +790,7 @@
         normalizeReadValue(details.currentLocation, statusKey, false),
       ]);
       rows.push([
-        "Total Late Fee ($10/h)",
+        "Total Late Fee (NRs 10/h)",
         formatReadCurrency(details.lateFee, statusKey, false),
       ]);
       rows.push([

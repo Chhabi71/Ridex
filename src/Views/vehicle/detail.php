@@ -114,7 +114,7 @@ if ($vehicle !== null) {
 			</div>
 
 			<div class="vehicle-detail-cta" aria-label="Pricing and booking">
-				<div class="vehicle-price">$<?= htmlspecialchars($pricePerDay, ENT_QUOTES, 'UTF-8') ?> <span class="day-text">/ day</span></div>
+				<div class="vehicle-price">NRs <?= htmlspecialchars($pricePerDay, ENT_QUOTES, 'UTF-8') ?> <span class="day-text">/ day</span></div>
 				<button
 					class="book-button"
 					type="button"

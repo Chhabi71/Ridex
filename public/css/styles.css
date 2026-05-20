@@ -2240,3 +2240,313 @@ span.flatpickr-weekday {
     font-size: 16px;
   }
 }
+
+
+/* AI-inspired recommendation UI */
+.recommendation-section {
+	margin-top: 2rem;
+}
+
+.recommendation-section__header {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1.25rem;
+}
+
+.recommendation-section__eyebrow {
+	margin: 0 0 0.25rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #6b7280;
+}
+
+.recommendation-section__title {
+	margin: 0;
+	font-size: clamp(1.5rem, 2vw, 2rem);
+}
+
+.recommendation-section__copy {
+	max-width: 28rem;
+	margin: 0;
+	color: #6b7280;
+	font-size: 0.95rem;
+}
+
+.recommendation-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	width: fit-content;
+	margin: 0.35rem 0 0;
+	padding: 0.35rem 0.65rem;
+	border-radius: 999px;
+	background: #eef2ff;
+	color: #3730a3;
+	font-size: 0.78rem;
+	font-weight: 700;
+}
+
+.recommendation-badge .material-symbols-rounded {
+	font-size: 1rem;
+}
+
+.recommendation-badge--card {
+	margin-left: 1rem;
+	margin-right: 1rem;
+}
+
+.recommendation-reason {
+	margin: 0.35rem 0 0;
+	color: #6b7280;
+	font-size: 0.86rem;
+}
+
+@media (max-width: 720px) {
+	.recommendation-section__header {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+}
+
+/* Ridex Groq chatbot UI */
+.ridex-chatbot {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 9999;
+	font-family: inherit;
+}
+
+.ridex-chatbot__toggle {
+	width: 58px;
+	height: 58px;
+	border: 0;
+	border-radius: 999px;
+	background: #3ee23a;
+	color: #ffffff;
+	box-shadow: 0 18px 40px rgba(20, 140, 40, 0.22);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ridex-chatbot__toggle .material-symbols-rounded {
+	font-size: 30px;
+}
+
+.ridex-chatbot__panel {
+	position: absolute;
+	right: 0;
+	bottom: 76px;
+	width: min(380px, calc(100vw - 32px));
+	height: 540px;
+	max-height: calc(100vh - 120px);
+	background: #ffffff;
+	border: 1px solid rgba(62, 226, 58, 0.36);
+	border-radius: 26px;
+	box-shadow: 0 22px 60px rgba(0, 0, 0, 0.16);
+	overflow: hidden;
+	display: none;
+	flex-direction: column;
+}
+
+.ridex-chatbot.is-open .ridex-chatbot__panel {
+	display: flex;
+}
+
+.ridex-chatbot__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 18px 18px 14px;
+	background: linear-gradient(135deg, #ecffec, #ffffff);
+	border-bottom: 1px solid rgba(62, 226, 58, 0.22);
+}
+
+.ridex-chatbot__eyebrow {
+	margin: 0 0 4px;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #16a019;
+}
+
+.ridex-chatbot__title {
+	margin: 0;
+	font-size: 22px;
+	line-height: 1.1;
+}
+
+.ridex-chatbot__close,
+.ridex-chatbot__send {
+	border: 0;
+	border-radius: 999px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ridex-chatbot__close {
+	width: 36px;
+	height: 36px;
+	background: #ffffff;
+	color: #111827;
+}
+
+.ridex-chatbot__messages {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	background: #fbfffb;
+}
+
+.ridex-chatbot__message {
+	max-width: 86%;
+	margin-bottom: 10px;
+	padding: 10px 13px;
+	border-radius: 18px;
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+.ridex-chatbot__message--bot {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	color: #111827;
+	border-top-left-radius: 6px;
+}
+
+.ridex-chatbot__message--user {
+	margin-left: auto;
+	background: #3ee23a;
+	color: #ffffff;
+	border-top-right-radius: 6px;
+}
+
+.ridex-chatbot__form {
+	display: flex;
+	gap: 10px;
+	padding: 14px;
+	background: #ffffff;
+	border-top: 1px solid #e5e7eb;
+}
+
+.ridex-chatbot__input {
+	flex: 1;
+	min-width: 0;
+	border: 1px solid #d1d5db;
+	border-radius: 999px;
+	padding: 11px 14px;
+	font: inherit;
+	outline: none;
+}
+
+.ridex-chatbot__input:focus {
+	border-color: #3ee23a;
+	box-shadow: 0 0 0 3px rgba(62, 226, 58, 0.16);
+}
+
+.ridex-chatbot__send {
+	width: 44px;
+	height: 44px;
+	background: #3ee23a;
+	color: #ffffff;
+}
+
+.ridex-chatbot__cards {
+	display: grid;
+	gap: 10px;
+	margin: 4px 0 12px;
+}
+
+.ridex-chatbot__card {
+	display: grid;
+	grid-template-columns: 84px 1fr;
+	gap: 10px;
+	padding: 10px;
+	background: #ffffff;
+	border: 1px solid #dff7df;
+	border-radius: 18px;
+}
+
+.ridex-chatbot__card-image {
+	width: 84px;
+	height: 74px;
+	object-fit: contain;
+	background: #f7fff7;
+	border-radius: 14px;
+}
+
+.ridex-chatbot__card-title {
+	margin: 0 0 4px;
+	font-size: 15px;
+	line-height: 1.2;
+}
+
+.ridex-chatbot__card-meta,
+.ridex-chatbot__card-score {
+	margin: 0 0 5px;
+	font-size: 12px;
+	color: #6b7280;
+}
+
+.ridex-chatbot__card-score {
+	font-weight: 800;
+	color: #16a019;
+}
+
+.ridex-chatbot__card-link {
+	font-size: 13px;
+	font-weight: 800;
+	color: #16a019;
+	text-decoration: none;
+}
+
+.ridex-chatbot__card-link:hover,
+.ridex-chatbot__card-link:focus-visible {
+	text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+	.ridex-chatbot {
+		right: 16px;
+		bottom: 16px;
+	}
+
+	.ridex-chatbot__panel {
+		bottom: 70px;
+		height: 500px;
+	}
+}
+
+/* Chatbot recommended vehicle actions */
+.ridex-chatbot__card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.ridex-chatbot__card-book {
+  border: 0;
+  border-radius: 999px;
+  background: #36dd39;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 14px;
+}
+
+.ridex-chatbot__card-book:hover {
+  filter: brightness(0.95);
+}

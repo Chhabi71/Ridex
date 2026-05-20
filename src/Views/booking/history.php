@@ -24,7 +24,7 @@ if (!in_array($bookingHistorySelectedTab, $allowedTabs, true)) {
 
 $formatCurrency = static function ($amount): string {
 	$numeric = (float) $amount;
-	return '$' . number_format($numeric, 2);
+	return 'NRs ' . number_format($numeric, 2);
 };
 
 $tabLabels = [
