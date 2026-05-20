@@ -1,5 +1,25 @@
 {
-    "require": {
-        "phpmailer/phpmailer": "^7.0"
-    }
+  "name": "bluetakiis/rupika-ridex",
+  "description": "RIDEX PHP rental application",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "phpmailer/phpmailer": "^7.0"
+  },
+  "scripts": {
+    "migrate": "php bin/migrate.php",
+    "seed": "php bin/seed.php",
+    "sync:vehicles": "php bin/sync_vehicles_json.php --prefer-json",
+    "snapshot:export": "php bin/export_db_snapshot.php",
+    "snapshot:import": "php bin/import_db_snapshot.php --if-missing-ok"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
