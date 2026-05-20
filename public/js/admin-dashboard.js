@@ -1,227 +1,450 @@
 /**
  * Purpose: Admin dashboard JS to load metrics and render charts/widgets.
  * Website Section: Admin Dashboard.
- * Developer Notes: Fetch metrics via AJAX, hydrate Chart.js configs, update KPI cards, and handle auto-refresh/filters.
  */
 
 (function () {
-	"use strict";
+  "use strict";
 
-	var dataNode = document.getElementById("admin-dashboard-data");
-	if (!dataNode) {
-		return;
-	}
+  // Mobile admin sidebar: toggle with header logo tap (runs on all admin pages)
+  (function initAdminSidebarMobileToggle() {
+    var sidebar = document.querySelector(".admin-sidebar");
+    var logo = document.querySelector(".site-header__logo");
 
-	var parsedData = {};
-	try {
-		parsedData = JSON.parse(dataNode.textContent || "{}");
-	} catch (error) {
-		parsedData = {};
-	}
+    if (!sidebar || !logo) {
+      return;
+    }
 
-	var hasNonZeroValues = function (values) {
-		if (!Array.isArray(values)) {
-			return false;
-		}
+    var mediaQuery = window.matchMedia("(max-width: 900px)");
 
-		for (var i = 0; i < values.length; i += 1) {
-			var numericValue = Number(values[i]);
-			if (Number.isFinite(numericValue) && numericValue > 0) {
-				return true;
-			}
-		}
+    var closeSidebar = function () {
+      sidebar.classList.remove("open");
+    };
 
-		return false;
-	};
+    logo.style.cursor = "pointer";
+    logo.setAttribute("role", "button");
+    logo.setAttribute("aria-label", "Toggle admin sidebar");
+    logo.setAttribute("tabindex", "0");
 
-	var setUnavailableState = function (panelKey, isUnavailable) {
-		var panel = document.querySelector('[data-chart-panel="' + panelKey + '"]');
-		if (!panel) {
-			return;
-		}
+    logo.addEventListener("click", function (event) {
+      if (!mediaQuery.matches) {
+        return;
+      }
 
-		var fallback = panel.querySelector("[data-chart-fallback]");
-		var status = panel.querySelector("[data-chart-status]");
-		var canvasWrap = panel.querySelector(".admin-chart-card__canvas-wrap");
+      // Prevent navigation when logo is an anchor so toggle is visible
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
 
-		if (fallback) {
-			fallback.hidden = !isUnavailable;
-		}
+      sidebar.classList.toggle("open");
+    });
 
-		if (canvasWrap) {
-			canvasWrap.hidden = isUnavailable;
-		}
+    logo.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
 
-		if (status) {
-			status.textContent = isUnavailable ? "Unavailable" : "Live";
-			status.classList.toggle("is-unavailable", isUnavailable);
-		}
-	};
+      if (!mediaQuery.matches) {
+        return;
+      }
 
-	var salesChartData = parsedData.salesVehicleCategory || {};
-	var salesLabels = Array.isArray(salesChartData.labels) ? salesChartData.labels : [];
-	var salesDatasets = Array.isArray(salesChartData.datasets) ? salesChartData.datasets : [];
-	var salesHasData = false;
+      // Prevent default (e.g., link activation) and toggle
+      if (event && typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
 
-	for (var salesIndex = 0; salesIndex < salesDatasets.length; salesIndex += 1) {
-		if (hasNonZeroValues(salesDatasets[salesIndex].data)) {
-			salesHasData = true;
-			break;
-		}
-	}
+      sidebar.classList.toggle("open");
+    });
 
-	if (typeof window.Chart !== "function" || !salesHasData || salesLabels.length === 0) {
-		setUnavailableState("salesVehicleCategory", true);
-	} else {
-		setUnavailableState("salesVehicleCategory", false);
-		var salesCanvas = document.getElementById("admin-sales-vehicle-category-chart");
-		if (salesCanvas) {
-			new window.Chart(salesCanvas, {
-				type: "line",
-				data: {
-					labels: salesLabels,
-					datasets: salesDatasets.map(function (dataset) {
-						return {
-							label: dataset.label || "",
-							data: Array.isArray(dataset.data) ? dataset.data : [],
-							borderColor: dataset.borderColor || "#4aa3ff",
-							backgroundColor: dataset.borderColor || "#4aa3ff",
-							pointRadius: 3,
-							pointHoverRadius: 4,
-							tension: 0,
-							fill: false,
-							borderWidth: 2,
-						};
-					}),
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					plugins: {
-						title: {
-							display: true,
-							text: "Chart.js Time Scale",
-							font: {
-								size: 11,
-								weight: "600",
-							},
-							color: "#7d7d7d",
-							padding: {
-								bottom: 4,
-							},
-						},
-						legend: {
-							position: "top",
-							labels: {
-								boxWidth: 14,
-								boxHeight: 8,
-								usePointStyle: false,
-								font: {
-									size: 10,
-								},
-							},
-						},
-					},
-					scales: {
-						y: {
-							beginAtZero: true,
-							title: {
-								display: true,
-								text: "value",
-								font: {
-									size: 10,
-								},
-							},
-							ticks: {
-								precision: 0,
-								font: {
-									size: 10,
-								},
-							},
-							grid: {
-								color: "rgba(11, 11, 11, 0.08)",
-							},
-						},
-						x: {
-							title: {
-								display: true,
-								text: "Date",
-								font: {
-									size: 10,
-								},
-							},
-							ticks: {
-								font: {
-									size: 9,
-								},
-							},
-							grid: {
-								display: false,
-							},
-						},
-					},
-				},
-			});
-		}
-	}
+    document.addEventListener("click", function (event) {
+      if (!mediaQuery.matches) {
+        closeSidebar();
+        return;
+      }
 
-	var rentChartData = parsedData.mostRentedVehicleCategory || {};
-	var rentLabels = Array.isArray(rentChartData.labels) ? rentChartData.labels : [];
-	var rentDatasets = Array.isArray(rentChartData.datasets) ? rentChartData.datasets : [];
-	var rentValues = rentDatasets[0] && Array.isArray(rentDatasets[0].data) ? rentDatasets[0].data : [];
-	var rentHasData = hasNonZeroValues(rentValues);
+      if (sidebar.contains(event.target) || logo.contains(event.target)) {
+        return;
+      }
 
-	if (typeof window.Chart !== "function" || !rentHasData || rentLabels.length === 0) {
-		setUnavailableState("mostRentedVehicleCategory", true);
-		return;
-	}
+      closeSidebar();
+    });
 
-	setUnavailableState("mostRentedVehicleCategory", false);
-	var rentCanvas = document.getElementById("admin-most-rented-category-chart");
-	if (!rentCanvas) {
-		return;
-	}
+    window.addEventListener("resize", function () {
+      if (!mediaQuery.matches) {
+        closeSidebar();
+      }
+    });
+  })();
 
-	new window.Chart(rentCanvas, {
-		type: "doughnut",
-		data: {
-			labels: rentLabels,
-			datasets: [
-				{
-					data: rentValues,
-					backgroundColor: Array.isArray(rentDatasets[0].backgroundColor)
-						? rentDatasets[0].backgroundColor
-						: ["#f75b7a", "#f6a340", "#f4ca55"],
-					borderWidth: 0,
-				},
-			],
-		},
-		options: {
-			responsive: true,
-			maintainAspectRatio: false,
-			cutout: "62%",
-			plugins: {
-				title: {
-					display: true,
-					text: "Chart.js Pie Chart",
-					font: {
-						size: 8,
-						weight: "400",
-					},
-					color: "#9b9b9b",
-				},
-				legend: {
-					position: "top",
-					labels: {
-						boxWidth: 10,
-						boxHeight: 10,
-						padding: 10,
-						font: {
-							size: 8,
-						},
-					},
-				},
-			},
-		},
-	});
+  var dataNode = document.getElementById("admin-dashboard-data");
+  if (!dataNode) {
+    return;
+  }
+
+  var trendClassOptions = [
+    "admin-kpi-card__trend--up",
+    "admin-kpi-card__trend--down",
+    "admin-kpi-card__trend--flat",
+    "admin-kpi-card__trend--unavailable",
+  ];
+  var salesChartInstance = null;
+  var rentChartInstance = null;
+  var refreshInFlight = false;
+
+  var parseJsonText = function (rawText) {
+    try {
+      return JSON.parse(rawText || "{}");
+    } catch (error) {
+      return {};
+    }
+  };
+
+  var isFiniteNumber = function (value) {
+    if (value === null || value === undefined || value === "") {
+      return false;
+    }
+
+    var numericValue = Number(value);
+    return Number.isFinite(numericValue);
+  };
+
+  var normalizePayload = function (payload) {
+    var normalized = {
+      kpis: {},
+      charts: {},
+    };
+
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return normalized;
+    }
+
+    var hasKpis =
+      payload.kpis &&
+      typeof payload.kpis === "object" &&
+      !Array.isArray(payload.kpis);
+    var hasCharts =
+      payload.charts &&
+      typeof payload.charts === "object" &&
+      !Array.isArray(payload.charts);
+
+    if (hasKpis) {
+      normalized.kpis = payload.kpis;
+    }
+
+    if (hasCharts) {
+      normalized.charts = payload.charts;
+    }
+
+    if (!hasKpis && !hasCharts) {
+      normalized.charts = payload;
+    }
+
+    return normalized;
+  };
+
+  var setUnavailableState = function (panelKey, isUnavailable) {
+    var panel = document.querySelector('[data-chart-panel="' + panelKey + '"]');
+    if (!panel) {
+      return;
+    }
+
+    var fallback = panel.querySelector("[data-chart-fallback]");
+    var status = panel.querySelector("[data-chart-status]");
+    var canvasWrap = panel.querySelector(".admin-chart-card__canvas-wrap");
+
+    if (fallback) {
+      fallback.hidden = !isUnavailable;
+    }
+
+    if (canvasWrap) {
+      canvasWrap.hidden = isUnavailable;
+    }
+
+    if (status) {
+      status.textContent = isUnavailable ? "Unavailable" : "Live";
+      status.classList.toggle("is-unavailable", isUnavailable);
+    }
+  };
+
+  var formatCurrency = function (value) {
+    if (!isFiniteNumber(value)) {
+      return "Unavailable";
+    }
+
+    return "NRs " + Math.round(Number(value)).toLocaleString("en-US");
+  };
+
+  var formatInteger = function (value) {
+    if (!isFiniteNumber(value)) {
+      return "Unavailable";
+    }
+
+    return Math.round(Number(value)).toLocaleString("en-US");
+  };
+
+  var formatPercent = function (value) {
+    if (!isFiniteNumber(value)) {
+      return "Unavailable";
+    }
+
+    return Number(value).toFixed(1) + "%";
+  };
+
+  var resolveTrend = function (trend) {
+    if (!isFiniteNumber(trend)) {
+      return {
+        label: "New",
+        className: "admin-kpi-card__trend--up",
+      };
+    }
+
+    var trendValue = Number(trend);
+    if (Math.abs(trendValue) < 0.05) {
+      return {
+        label: "0.0%",
+        className: "admin-kpi-card__trend--flat",
+      };
+    }
+
+    if (trendValue > 0) {
+      return {
+        label: "+" + trendValue.toFixed(1) + "%",
+        className: "admin-kpi-card__trend--up",
+      };
+    }
+
+    return {
+      label: trendValue.toFixed(1) + "%",
+      className: "admin-kpi-card__trend--down",
+    };
+  };
+
+  var updateKpis = function (kpis) {
+    var kpiNodes = document.querySelectorAll("[data-kpi-value]");
+    for (var index = 0; index < kpiNodes.length; index += 1) {
+      var valueNode = kpiNodes[index];
+      var kpiKey = valueNode.getAttribute("data-kpi-value") || "";
+      var formatType = (
+        valueNode.getAttribute("data-kpi-format") || "integer"
+      ).toLowerCase();
+      var metric = kpis && typeof kpis === "object" ? kpis[kpiKey] : null;
+      var metricValue =
+        metric && typeof metric === "object" ? metric.value : null;
+
+      if (formatType === "currency") {
+        valueNode.textContent = formatCurrency(metricValue);
+      } else if (formatType === "percent") {
+        valueNode.textContent = formatPercent(metricValue);
+      } else {
+        valueNode.textContent = formatInteger(metricValue);
+      }
+
+      var trendNode = document.querySelector(
+        '[data-kpi-trend="' + kpiKey + '"]',
+      );
+      if (!trendNode) {
+        continue;
+      }
+
+      var trendInfo = resolveTrend(
+        metric && typeof metric === "object" ? metric.trend : null,
+      );
+      trendNode.textContent = trendInfo.label;
+
+      for (
+        var trendIndex = 0;
+        trendIndex < trendClassOptions.length;
+        trendIndex += 1
+      ) {
+        trendNode.classList.remove(trendClassOptions[trendIndex]);
+      }
+      trendNode.classList.add(trendInfo.className);
+    }
+
+    var fleetTrendNode = document.querySelector(
+      '[data-kpi-trend="fleetAvailability"]',
+    );
+    var fleetIconNode = document.querySelector(
+      '[data-kpi-icon="fleetAvailability"]',
+    );
+    if (fleetTrendNode && fleetIconNode) {
+      fleetIconNode.classList.remove(
+        "admin-kpi-card__icon--up",
+        "admin-kpi-card__icon--down",
+      );
+      if (fleetTrendNode.classList.contains("admin-kpi-card__trend--down")) {
+        fleetIconNode.textContent = "trending_down";
+        fleetIconNode.classList.add("admin-kpi-card__icon--down");
+      } else {
+        fleetIconNode.textContent = "trending_up";
+        fleetIconNode.classList.add("admin-kpi-card__icon--up");
+      }
+    }
+  };
+
+  var getChartsApi = function () {
+    if (!window.RidexCharts || typeof window.RidexCharts !== "object") {
+      return null;
+    }
+
+    return window.RidexCharts;
+  };
+
+  var renderSalesChart = function (charts) {
+    var chartsApi = getChartsApi();
+    if (
+      !chartsApi ||
+      typeof chartsApi.renderSalesVehicleCategoryChart !== "function"
+    ) {
+      setUnavailableState("salesVehicleCategory", true);
+      if (salesChartInstance) {
+        salesChartInstance.destroy();
+        salesChartInstance = null;
+      }
+      return;
+    }
+
+    salesChartInstance = chartsApi.renderSalesVehicleCategoryChart({
+      charts: charts,
+      currentChart: salesChartInstance,
+      canvasId: "admin-sales-vehicle-category-chart",
+      setUnavailableState: setUnavailableState,
+    });
+  };
+
+  var renderMostRentedChart = function (charts) {
+    var chartsApi = getChartsApi();
+    if (
+      !chartsApi ||
+      typeof chartsApi.renderMostRentedFleetChart !== "function"
+    ) {
+      setUnavailableState("mostRentedVehicleCategory", true);
+      if (rentChartInstance) {
+        rentChartInstance.destroy();
+        rentChartInstance = null;
+      }
+      return;
+    }
+
+    rentChartInstance = chartsApi.renderMostRentedFleetChart({
+      charts: charts,
+      currentChart: rentChartInstance,
+      canvasId: "admin-most-rented-category-chart",
+      setUnavailableState: setUnavailableState,
+    });
+  };
+
+  var applyPayload = function (rawPayload) {
+    var payload = normalizePayload(rawPayload);
+    updateKpis(payload.kpis);
+    renderSalesChart(payload.charts);
+    renderMostRentedChart(payload.charts);
+  };
+
+  var fetchLatestPayload = function (refreshUrl) {
+    if (
+      refreshInFlight ||
+      refreshUrl === "" ||
+      typeof window.fetch !== "function"
+    ) {
+      return;
+    }
+
+    refreshInFlight = true;
+    var abortController =
+      typeof window.AbortController === "function"
+        ? new window.AbortController()
+        : null;
+    var timeoutId = window.setTimeout(function () {
+      if (abortController) {
+        abortController.abort();
+      }
+    }, 10000);
+
+    var finalize = function () {
+      refreshInFlight = false;
+      window.clearTimeout(timeoutId);
+    };
+
+    var requestOptions = {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    if (abortController) {
+      requestOptions.signal = abortController.signal;
+    }
+
+    window
+      .fetch(refreshUrl, requestOptions)
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error(
+            "Dashboard refresh failed with status " + response.status,
+          );
+        }
+        return response.json();
+      })
+      .then(function (responseBody) {
+        if (
+          !responseBody ||
+          responseBody.ok !== true ||
+          typeof responseBody.payload !== "object"
+        ) {
+          throw new Error("Dashboard refresh returned an invalid payload.");
+        }
+
+        applyPayload(responseBody.payload);
+      })
+      .catch(function (error) {
+        if (error && error.name === "AbortError") {
+          return;
+        }
+
+        if (
+          typeof console !== "undefined" &&
+          typeof console.warn === "function"
+        ) {
+          console.warn("Admin dashboard live refresh failed:", error);
+        }
+      })
+      .then(finalize, finalize);
+  };
+
+  var initialPayload = parseJsonText(dataNode.textContent || "{}");
+  applyPayload(initialPayload);
+
+  var refreshUrl = (dataNode.getAttribute("data-refresh-url") || "").trim();
+  var refreshIntervalMs = Number(
+    dataNode.getAttribute("data-refresh-interval-ms") || 30000,
+  );
+  if (!Number.isFinite(refreshIntervalMs) || refreshIntervalMs < 10000) {
+    refreshIntervalMs = 30000;
+  } else if (refreshIntervalMs > 300000) {
+    refreshIntervalMs = 300000;
+  }
+
+  if (refreshUrl !== "") {
+    fetchLatestPayload(refreshUrl);
+
+    window.setInterval(function () {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      fetchLatestPayload(refreshUrl);
+    }, refreshIntervalMs);
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        fetchLatestPayload(refreshUrl);
+      }
+    });
+  }
+
+  // duplicate sidebar init removed (handled earlier in file)
 })();

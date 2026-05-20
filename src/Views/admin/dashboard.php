@@ -8,6 +8,16 @@
 $adminUserName = isset($adminUserName) ? trim((string) $adminUserName) : 'Admin';
 $dashboardKpis = isset($dashboardKpis) && is_array($dashboardKpis) ? $dashboardKpis : [];
 $dashboardCharts = isset($dashboardCharts) && is_array($dashboardCharts) ? $dashboardCharts : [];
+$dashboardDataEndpoint = isset($dashboardDataEndpoint) ? trim((string) $dashboardDataEndpoint) : 'index.php?page=admin-dashboard-data';
+$dashboardRefreshIntervalMs = isset($dashboardRefreshIntervalMs) && is_numeric($dashboardRefreshIntervalMs)
+	? (int) $dashboardRefreshIntervalMs
+	: 30000;
+
+if ($dashboardRefreshIntervalMs < 10000) {
+	$dashboardRefreshIntervalMs = 10000;
+} elseif ($dashboardRefreshIntervalMs > 300000) {
+	$dashboardRefreshIntervalMs = 300000;
+}
 
 $resolveMetric = static function (array $kpis, string $key): array {
 	$metric = $kpis[$key] ?? [];
@@ -21,8 +31,8 @@ $resolveMetric = static function (array $kpis, string $key): array {
 $resolveTrend = static function ($trend): array {
 	if (!is_numeric($trend)) {
 		return [
-			'label' => 'Unavailable',
-			'class' => 'admin-kpi-card__trend--unavailable',
+			'label' => 'New',
+			'class' => 'admin-kpi-card__trend--up',
 		];
 	}
 
@@ -52,7 +62,7 @@ $formatCurrency = static function ($value): string {
 		return 'Unavailable';
 	}
 
-	return '$' . number_format((float) $value, 0);
+	return 'NRs ' . number_format((float) $value, 0);
 };
 
 $formatInteger = static function ($value): string {
@@ -88,13 +98,16 @@ if (($fleetAvailabilityTrend['class'] ?? '') === 'admin-kpi-card__trend--down') 
 	$fleetAvailabilityIconClass = 'admin-kpi-card__icon--down';
 }
 
-$dashboardChartsJson = json_encode(
-	$dashboardCharts,
+$dashboardPayloadJson = json_encode(
+	[
+		'kpis' => $dashboardKpis,
+		'charts' => $dashboardCharts,
+	],
 	JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
 );
 
-if (!is_string($dashboardChartsJson)) {
-	$dashboardChartsJson = '{}';
+if (!is_string($dashboardPayloadJson)) {
+	$dashboardPayloadJson = '{}';
 }
 ?>
 
@@ -104,8 +117,9 @@ if (!is_string($dashboardChartsJson)) {
 			<nav class="admin-sidebar__nav" aria-label="Admin sections">
 				<a class="admin-sidebar__link is-active" href="index.php?page=admin-dashboard" aria-current="page">Dashboard</a>
 				<a class="admin-sidebar__link" href="index.php?page=admin-manage-fleet">Manage Fleet</a>
-				<span class="admin-sidebar__link is-disabled" aria-disabled="true">All Bookings</span>
-				<span class="admin-sidebar__link is-disabled" aria-disabled="true">Live Tracking</span>
+				<a class="admin-sidebar__link" href="index.php?page=admin-all-bookings">All Bookings</a>
+				<a class="admin-sidebar__link" href="index.php?page=admin-live-tracking">Live Tracking</a>
+				<a class="admin-sidebar__link" href="index.php?page=admin-user-verifications">User Verification</a>
 			</nav>
 		</aside>
 
@@ -118,8 +132,8 @@ if (!is_string($dashboardChartsJson)) {
 						<h2>Total Revenue</h2>
 						<span class="material-symbols-rounded admin-kpi-card__icon admin-kpi-card__icon--up" aria-hidden="true">trending_up</span>
 					</header>
-					<p class="admin-kpi-card__value"><?= htmlspecialchars($formatCurrency($totalRevenue['value']), ENT_QUOTES, 'UTF-8') ?></p>
-					<p class="admin-kpi-card__trend <?= htmlspecialchars($totalRevenueTrend['class'], ENT_QUOTES, 'UTF-8') ?>">
+					<p class="admin-kpi-card__value" data-kpi-value="totalRevenue" data-kpi-format="currency"><?= htmlspecialchars($formatCurrency($totalRevenue['value']), ENT_QUOTES, 'UTF-8') ?></p>
+					<p class="admin-kpi-card__trend <?= htmlspecialchars($totalRevenueTrend['class'], ENT_QUOTES, 'UTF-8') ?>" data-kpi-trend="totalRevenue">
 						<?= htmlspecialchars($totalRevenueTrend['label'], ENT_QUOTES, 'UTF-8') ?>
 					</p>
 				</article>
@@ -129,8 +143,8 @@ if (!is_string($dashboardChartsJson)) {
 						<h2>Active Rentals</h2>
 						<span class="material-symbols-rounded admin-kpi-card__icon admin-kpi-card__icon--up" aria-hidden="true">shopping_cart</span>
 					</header>
-					<p class="admin-kpi-card__value"><?= htmlspecialchars($formatInteger($activeRentals['value']), ENT_QUOTES, 'UTF-8') ?></p>
-					<p class="admin-kpi-card__trend <?= htmlspecialchars($activeRentalsTrend['class'], ENT_QUOTES, 'UTF-8') ?>">
+					<p class="admin-kpi-card__value" data-kpi-value="activeRentals" data-kpi-format="integer"><?= htmlspecialchars($formatInteger($activeRentals['value']), ENT_QUOTES, 'UTF-8') ?></p>
+					<p class="admin-kpi-card__trend <?= htmlspecialchars($activeRentalsTrend['class'], ENT_QUOTES, 'UTF-8') ?>" data-kpi-trend="activeRentals">
 						<?= htmlspecialchars($activeRentalsTrend['label'], ENT_QUOTES, 'UTF-8') ?>
 					</p>
 				</article>
@@ -140,8 +154,8 @@ if (!is_string($dashboardChartsJson)) {
 						<h2>Total Fleet</h2>
 						<span class="material-symbols-rounded admin-kpi-card__icon admin-kpi-card__icon--up" aria-hidden="true">trending_up</span>
 					</header>
-					<p class="admin-kpi-card__value"><?= htmlspecialchars($formatInteger($totalFleet['value']), ENT_QUOTES, 'UTF-8') ?></p>
-					<p class="admin-kpi-card__trend <?= htmlspecialchars($totalFleetTrend['class'], ENT_QUOTES, 'UTF-8') ?>">
+					<p class="admin-kpi-card__value" data-kpi-value="totalFleet" data-kpi-format="integer"><?= htmlspecialchars($formatInteger($totalFleet['value']), ENT_QUOTES, 'UTF-8') ?></p>
+					<p class="admin-kpi-card__trend <?= htmlspecialchars($totalFleetTrend['class'], ENT_QUOTES, 'UTF-8') ?>" data-kpi-trend="totalFleet">
 						<?= htmlspecialchars($totalFleetTrend['label'], ENT_QUOTES, 'UTF-8') ?>
 					</p>
 				</article>
@@ -149,10 +163,10 @@ if (!is_string($dashboardChartsJson)) {
 				<article class="admin-kpi-card">
 					<header class="admin-kpi-card__header">
 						<h2>Fleet Availability</h2>
-						<span class="material-symbols-rounded admin-kpi-card__icon <?= htmlspecialchars($fleetAvailabilityIconClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= htmlspecialchars($fleetAvailabilityIcon, ENT_QUOTES, 'UTF-8') ?></span>
+						<span class="material-symbols-rounded admin-kpi-card__icon <?= htmlspecialchars($fleetAvailabilityIconClass, ENT_QUOTES, 'UTF-8') ?>" data-kpi-icon="fleetAvailability" aria-hidden="true"><?= htmlspecialchars($fleetAvailabilityIcon, ENT_QUOTES, 'UTF-8') ?></span>
 					</header>
-					<p class="admin-kpi-card__value"><?= htmlspecialchars($formatPercent($fleetAvailability['value']), ENT_QUOTES, 'UTF-8') ?></p>
-					<p class="admin-kpi-card__trend <?= htmlspecialchars($fleetAvailabilityTrend['class'], ENT_QUOTES, 'UTF-8') ?>">
+					<p class="admin-kpi-card__value" data-kpi-value="fleetAvailability" data-kpi-format="percent"><?= htmlspecialchars($formatPercent($fleetAvailability['value']), ENT_QUOTES, 'UTF-8') ?></p>
+					<p class="admin-kpi-card__trend <?= htmlspecialchars($fleetAvailabilityTrend['class'], ENT_QUOTES, 'UTF-8') ?>" data-kpi-trend="fleetAvailability">
 						<?= htmlspecialchars($fleetAvailabilityTrend['label'], ENT_QUOTES, 'UTF-8') ?>
 					</p>
 				</article>
@@ -182,5 +196,10 @@ if (!is_string($dashboardChartsJson)) {
 		</div>
 	</div>
 
-	<script id="admin-dashboard-data" type="application/json"><?= $dashboardChartsJson ?></script>
+	<script
+		id="admin-dashboard-data"
+		type="application/json"
+		data-refresh-url="<?= htmlspecialchars($dashboardDataEndpoint, ENT_QUOTES, 'UTF-8') ?>"
+		data-refresh-interval-ms="<?= (int) $dashboardRefreshIntervalMs ?>"
+	><?= $dashboardPayloadJson ?></script>
 </section>
