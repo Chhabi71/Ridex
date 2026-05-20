@@ -1,3 +1,4 @@
+
 /*
  * Purpose: Styles specific to admin dashboard and management screens.
 */
@@ -168,25 +169,50 @@
 }
 
 /* admin login: forgot-password confirmation modal content */
+.admin-reset-modal__dialog {
+  overflow-y: auto;
+  max-height: calc(100vh - 1cm);
+}
+
+.admin-reset-modal__dialog > .menu-modal__header {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  background: #ffffff;
+  padding-top: 4px;
+  padding-bottom: 10px;
+}
+
+.admin-reset-modal__dialog > .menu-modal__back {
+  position: sticky;
+  bottom: -1px;
+  z-index: 2;
+  background: #ffffff;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
 .admin-reset-modal__content {
-  margin-top: clamp(8px, 2vh, 20px);
+  width: 100%;
+  margin: 0;
+  margin-top: clamp(6px, 1.6vh, 14px);
   display: flex;
   flex-direction: column;
-  min-height: clamp(360px, 48vh, 460px);
-  gap: 12px;
+  min-height: auto;
+  gap: 10px;
 }
 
 .admin-reset-modal__icon {
   display: block;
   width: fit-content;
-  margin: 0 auto 16px;
+  margin: 0 auto 10px;
   color: #1ca51b;
-  font-size: clamp(70px, 9vw, 112px);
+  font-size: clamp(56px, 7vw, 86px);
 }
 
 .admin-reset-modal__title {
-  margin: 0 0 10px;
-  font-size: clamp(28px, 3.6vw, 36px);
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2.8vw, 30px);
   font-weight: 700;
   line-height: 1.1;
   color: #111111;
@@ -194,10 +220,34 @@
 
 .admin-reset-modal__text {
   margin: 0;
-  font-size: clamp(16px, 2.1vw, 22px);
+  font-size: clamp(14px, 1.7vw, 18px);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.4;
   color: #131313;
+}
+
+.admin-reset-modal__content .admin-login-form {
+  min-height: auto;
+  gap: 8px;
+}
+
+.admin-reset-modal__content .admin-login-form__label {
+  font-size: 14px;
+}
+
+.admin-reset-modal__content .admin-login-form__input {
+  height: 48px;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.admin-reset-modal__submit {
+  width: min(220px, 100%);
+  height: 48px;
+  min-height: 48px;
+  margin: 18px auto 0;
+  font-size: 15px;
 }
 
 .admin-modal__back {
