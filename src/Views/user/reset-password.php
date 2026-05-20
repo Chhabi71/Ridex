@@ -4,12 +4,14 @@ $resetErrors = isset($resetErrors) && is_array($resetErrors) ? $resetErrors : []
 $isResetValid = (bool) ($isResetValid ?? false);
 $isResetSuccess = (bool) ($isResetSuccess ?? false);
 $resetMessage = trim((string) ($resetMessage ?? ''));
+$resetRole = strtolower(trim((string) ($resetRole ?? 'user')));
+$resetRole = in_array($resetRole, ['user', 'admin'], true) ? $resetRole : 'user';
 ?>
 
 <section class="user-auth-status-page">
 	<div class="user-auth-status-card">
 		<span class="material-symbols-rounded user-auth-status-card__icon" aria-hidden="true"><?= $isResetSuccess ? 'check_circle' : 'lock_reset' ?></span>
-		<h1 class="user-auth-status-card__title"><?= $isResetSuccess ? 'Password Updated' : 'Reset Password' ?></h1>
+		<h1 class="user-auth-status-card__title"><?= $isResetSuccess ? 'Password Updated' : ($resetRole === 'admin' ? 'Reset Admin Password' : 'Reset Password') ?></h1>
 
 		<?php if ($resetMessage !== ''): ?>
 			<p class="user-auth-status-card__text"><?= htmlspecialchars($resetMessage, ENT_QUOTES, 'UTF-8') ?></p>
@@ -38,7 +40,11 @@ $resetMessage = trim((string) ($resetMessage ?? ''));
 				<button class="user-login-form__submit" type="submit">Update Password</button>
 			</form>
 		<?php else: ?>
+			<?php if ($resetRole === 'admin'): ?>
+			<button class="user-auth-status-card__button" type="button" data-modal-target="admin-login-modal">Back to Admin Login</button>
+		<?php else: ?>
 			<button class="user-auth-status-card__button" type="button" data-modal-target="user-login-modal">Back to Login</button>
+		<?php endif; ?>
 		<?php endif; ?>
 	</div>
 </section>

@@ -102,6 +102,7 @@ $ensureMaintenanceRecordsTable = static function (PDO $pdo): void {
 
 // admin login: shared form state for login modal
 $adminLoginError = '';
+$adminLoginSuccess = '';
 $adminLoginEmail = '';
 $adminLoginEmailInvalid = false;
 $adminLoginPasswordInvalid = false;
@@ -123,6 +124,10 @@ $isAdminLoginPost =
 $isAdminLogoutPost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
 	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'admin-logout';
+
+$isAdminForgotPasswordRequestPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'admin-forgot-password-request';
 
 $isUserRegisterPost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
@@ -2742,6 +2747,7 @@ if (!$isAdminLoginPost) {
 	$adminFlash = ridex_session_pull_flash('admin_login_flash');
 	if (!empty($adminFlash)) {
 		$adminLoginError = trim((string) ($adminFlash['error'] ?? ''));
+		$adminLoginSuccess = trim((string) ($adminFlash['success'] ?? ''));
 		$adminLoginEmail = trim((string) ($adminFlash['email'] ?? ''));
 		$adminLoginEmailInvalid = (bool) ($adminFlash['email_invalid'] ?? false);
 		$adminLoginPasswordInvalid = (bool) ($adminFlash['password_invalid'] ?? false);
@@ -2775,6 +2781,89 @@ try {
 	$ensureDefaultAdminAccount(db());
 } catch (Throwable $exception) {
 	ridex_log_exception('Default admin setup failed', $exception);
+}
+
+// admin forgot password: send a reset link to the registered admin email.
+if ($isAdminForgotPasswordRequestPost) {
+	$adminResetEmail = strtolower(trim((string) ($_POST['admin_reset_email'] ?? '')));
+
+	if ($adminResetEmail === '' || !filter_var($adminResetEmail, FILTER_VALIDATE_EMAIL)) {
+		ridex_session_set_flash('admin_login_flash', [
+			'error' => 'Please enter a valid admin email address.',
+			'success' => '',
+			'email' => $adminResetEmail,
+			'email_invalid' => true,
+			'password_invalid' => false,
+		]);
+		ridex_redirect('index.php', 303);
+	}
+
+	try {
+		$pdo = db();
+		$adminAccount = ridex_user_find_by_email($pdo, $adminResetEmail, 'admin');
+
+		if (!is_array($adminAccount)) {
+			ridex_session_set_flash('admin_login_flash', [
+				'error' => 'No admin account was found for this email address.',
+				'success' => '',
+				'email' => $adminResetEmail,
+				'email_invalid' => true,
+				'password_invalid' => false,
+			]);
+			ridex_redirect('index.php', 303);
+		}
+
+		$resetToken = bin2hex(random_bytes(32));
+		$resetTokenHash = hash('sha256', $resetToken);
+		$resetExpires = new DateTimeImmutable('+1 hour');
+		ridex_user_store_password_reset_token(
+			$pdo,
+			(int) ($adminAccount['id'] ?? 0),
+			$resetTokenHash,
+			$resetExpires,
+			'admin'
+		);
+
+		try {
+			$sent = ridex_send_password_reset_email(
+				(string) ($adminAccount['email'] ?? $adminResetEmail),
+				ridex_build_user_display_name($adminAccount),
+				$resetToken
+			);
+			if (!$sent) {
+				throw new RuntimeException('SMTP mail settings are not configured.');
+			}
+		} catch (Throwable $mailException) {
+			ridex_log_exception('Admin password reset email send failed', $mailException);
+			ridex_session_set_flash('admin_login_flash', [
+				'error' => 'Admin account found, but the reset email could not be sent. Please check SMTP settings.',
+				'success' => '',
+				'email' => $adminResetEmail,
+				'email_invalid' => false,
+				'password_invalid' => false,
+			]);
+			ridex_redirect('index.php', 303);
+		}
+
+		ridex_session_set_flash('admin_login_flash', [
+			'error' => '',
+			'success' => 'Admin password reset link sent. Please check the admin email inbox or spam folder.',
+			'email' => $adminResetEmail,
+			'email_invalid' => false,
+			'password_invalid' => false,
+		]);
+		ridex_redirect('index.php', 303);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Admin forgot password request failed', $exception);
+		ridex_session_set_flash('admin_login_flash', [
+			'error' => 'Unable to process admin password reset right now. Please try again.',
+			'success' => '',
+			'email' => $adminResetEmail,
+			'email_invalid' => false,
+			'password_invalid' => false,
+		]);
+		ridex_redirect('index.php', 303);
+	}
 }
 
 // admin login: process modal login post and redirect to dashboard placeholder on success
@@ -3019,9 +3108,23 @@ if ($isUserPasswordResetPost) {
 			throw new RuntimeException('Unable to hash reset password.');
 		}
 
-		ridex_user_update_password_and_clear_reset_token($pdo, (int) ($resetUser['id'] ?? 0), $passwordHash);
-		$_SESSION['password_reset_success'] = ['message' => 'Password updated successfully. You can now log in with your new password.'];
-		ridex_redirect('index.php?page=reset-password&status=success', 303);
+		$resetUserRole = strtolower(trim((string) ($resetUser['role'] ?? 'user')));
+		if (!in_array($resetUserRole, ['user', 'admin'], true)) {
+			$resetUserRole = 'user';
+		}
+
+		ridex_user_update_password_and_clear_reset_token($pdo, (int) ($resetUser['id'] ?? 0), $passwordHash, $resetUserRole);
+		$_SESSION['password_reset_success'] = [
+			'message' => $resetUserRole === 'admin'
+				? 'Admin password updated successfully. You can now log in to the admin dashboard with your new password.'
+				: 'Password updated successfully. You can now log in with your new password.',
+			'role' => $resetUserRole,
+		];
+		ridex_redirect('index.php?' . http_build_query([
+			'page' => 'reset-password',
+			'status' => 'success',
+			'role' => $resetUserRole,
+		]), 303);
 	} catch (Throwable $exception) {
 		ridex_log_exception('Password reset failed', $exception);
 		$_SESSION['password_reset_flash'] = [
@@ -4333,6 +4436,8 @@ if ($page === 'reset-password') {
 	$isResetSuccess = strtolower(trim((string) ($_GET['status'] ?? ''))) === 'success';
 	$resetErrors = [];
 	$resetMessage = '';
+	$resetRole = strtolower(trim((string) ($_GET['role'] ?? 'user')));
+	$resetRole = in_array($resetRole, ['user', 'admin'], true) ? $resetRole : 'user';
 	$isResetValid = false;
 
 	$resetFlash = ridex_session_pull_flash('password_reset_flash');
@@ -4342,9 +4447,14 @@ if ($page === 'reset-password') {
 
 	if ($isResetSuccess) {
 		$successMessage = ridex_session_pull_flash('password_reset_success');
+		if (is_array($successMessage) && strtolower(trim((string) ($successMessage['role'] ?? ''))) === 'admin') {
+			$resetRole = 'admin';
+		}
 		$resetMessage = is_array($successMessage) && trim((string) ($successMessage['message'] ?? '')) !== ''
 			? trim((string) ($successMessage['message'] ?? ''))
-			: 'Password updated successfully. You can now log in with your new password.';
+			: ($resetRole === 'admin'
+				? 'Admin password updated successfully. You can now log in to the admin dashboard with your new password.'
+				: 'Password updated successfully. You can now log in with your new password.');
 	} elseif ($resetToken === '') {
 		$resetErrors[] = 'This password reset link is invalid.';
 	} else {
@@ -4353,11 +4463,15 @@ if ($page === 'reset-password') {
 			$tokenHash = hash('sha256', $resetToken);
 			$resetUser = ridex_user_find_by_password_reset_token($pdo, $tokenHash);
 			if (is_array($resetUser)) {
+				$resetRole = strtolower(trim((string) ($resetUser['role'] ?? 'user')));
+				$resetRole = in_array($resetRole, ['user', 'admin'], true) ? $resetRole : 'user';
 				$expiresRaw = trim((string) ($resetUser['password_reset_expires'] ?? ''));
 				$expiresAt = $expiresRaw !== '' ? new DateTimeImmutable($expiresRaw) : null;
 				if ($expiresAt instanceof DateTimeImmutable && $expiresAt >= new DateTimeImmutable('now')) {
 					$isResetValid = true;
-					$resetMessage = 'Enter a new password for your RIDEX account. This reset link expires after 1 hour.';
+					$resetMessage = $resetRole === 'admin'
+						? 'Enter a new password for your RIDEX admin account. This reset link expires after 1 hour.'
+						: 'Enter a new password for your RIDEX account. This reset link expires after 1 hour.';
 				} else {
 					$resetErrors[] = 'This password reset link has expired. Please request a new one.';
 				}
@@ -4378,6 +4492,7 @@ if ($page === 'reset-password') {
 		'isResetValid' => $isResetValid,
 		'isResetSuccess' => $isResetSuccess,
 		'resetMessage' => $resetMessage,
+		'resetRole' => $resetRole,
 	];
 	require __DIR__ . '/../src/Templates/layout.php';
 	exit;

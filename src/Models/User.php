@@ -41,6 +41,50 @@ if (!function_exists('ridex_user_find_id_by_email')) {
 	}
 }
 
+
+if (!function_exists('ridex_user_find_by_email')) {
+	function ridex_user_find_by_email(PDO $pdo, string $email, ?string $role = null): ?array
+	{
+		$email = strtolower(trim($email));
+		if ($email === '') {
+			return null;
+		}
+
+		$role = $role !== null ? strtolower(trim($role)) : null;
+		if ($role === 'admin' || $role === 'user') {
+			$statement = $pdo->prepare(
+				'SELECT id, name, first_name, last_name, email, phone, drivers_id, password_hash, role,
+						COALESCE(email_verified, 0) AS email_verified,
+						email_verified_at,
+						password_reset_expires
+				 FROM users
+				 WHERE role = :role AND LOWER(email) = LOWER(:email)
+				 LIMIT 1'
+			);
+			$statement->execute([
+				'role' => $role,
+				'email' => $email,
+			]);
+		} else {
+			$statement = $pdo->prepare(
+				'SELECT id, name, first_name, last_name, email, phone, drivers_id, password_hash, role,
+						COALESCE(email_verified, 0) AS email_verified,
+						email_verified_at,
+						password_reset_expires
+				 FROM users
+				 WHERE LOWER(email) = LOWER(:email)
+				 LIMIT 1'
+			);
+			$statement->execute([
+				'email' => $email,
+			]);
+		}
+
+		$result = $statement->fetch();
+		return is_array($result) ? $result : null;
+	}
+}
+
 if (!function_exists('ridex_user_find_id_by_email_and_driver')) {
 	function ridex_user_find_id_by_email_and_driver(PDO $pdo, string $email, string $driversId): int
 	{
@@ -394,8 +438,13 @@ if (!function_exists('ridex_user_mark_email_verified')) {
 }
 
 if (!function_exists('ridex_user_store_password_reset_token')) {
-	function ridex_user_store_password_reset_token(PDO $pdo, int $userId, string $tokenHash, DateTimeInterface $expiresAt): void
+	function ridex_user_store_password_reset_token(PDO $pdo, int $userId, string $tokenHash, DateTimeInterface $expiresAt, string $role = 'user'): void
 	{
+		$role = strtolower(trim($role));
+		if (!in_array($role, ['user', 'admin'], true)) {
+			$role = 'user';
+		}
+
 		$statement = $pdo->prepare(
 			'UPDATE users
 			 SET password_reset_token_hash = :token_hash,
@@ -409,29 +458,42 @@ if (!function_exists('ridex_user_store_password_reset_token')) {
 			'token_hash' => $tokenHash,
 			'expires_at' => $expiresAt->format('Y-m-d H:i:s'),
 			'id' => $userId,
-			'role' => 'user',
+			'role' => $role,
 		]);
 	}
 }
 
 if (!function_exists('ridex_user_find_by_password_reset_token')) {
-	function ridex_user_find_by_password_reset_token(PDO $pdo, string $tokenHash): ?array
+	function ridex_user_find_by_password_reset_token(PDO $pdo, string $tokenHash, ?string $role = null): ?array
 	{
 		$tokenHash = trim($tokenHash);
 		if ($tokenHash === '') {
 			return null;
 		}
 
-		$statement = $pdo->prepare(
-			'SELECT id, name, email, password_reset_expires, COALESCE(email_verified, 0) AS email_verified
-			 FROM users
-			 WHERE role = :role AND password_reset_token_hash = :token_hash
-			 LIMIT 1'
-		);
-		$statement->execute([
-			'role' => 'user',
-			'token_hash' => $tokenHash,
-		]);
+		$role = $role !== null ? strtolower(trim($role)) : null;
+		if ($role === 'admin' || $role === 'user') {
+			$statement = $pdo->prepare(
+				'SELECT id, name, first_name, last_name, email, role, password_reset_expires, COALESCE(email_verified, 0) AS email_verified
+				 FROM users
+				 WHERE role = :role AND password_reset_token_hash = :token_hash
+				 LIMIT 1'
+			);
+			$statement->execute([
+				'role' => $role,
+				'token_hash' => $tokenHash,
+			]);
+		} else {
+			$statement = $pdo->prepare(
+				'SELECT id, name, first_name, last_name, email, role, password_reset_expires, COALESCE(email_verified, 0) AS email_verified
+				 FROM users
+				 WHERE role IN ("user", "admin") AND password_reset_token_hash = :token_hash
+				 LIMIT 1'
+			);
+			$statement->execute([
+				'token_hash' => $tokenHash,
+			]);
+		}
 
 		$result = $statement->fetch();
 		return is_array($result) ? $result : null;
@@ -439,8 +501,13 @@ if (!function_exists('ridex_user_find_by_password_reset_token')) {
 }
 
 if (!function_exists('ridex_user_update_password_and_clear_reset_token')) {
-	function ridex_user_update_password_and_clear_reset_token(PDO $pdo, int $userId, string $passwordHash): void
+	function ridex_user_update_password_and_clear_reset_token(PDO $pdo, int $userId, string $passwordHash, string $role = 'user'): void
 	{
+		$role = strtolower(trim($role));
+		if (!in_array($role, ['user', 'admin'], true)) {
+			$role = 'user';
+		}
+
 		$statement = $pdo->prepare(
 			'UPDATE users
 			 SET password_hash = :password_hash,
@@ -454,7 +521,7 @@ if (!function_exists('ridex_user_update_password_and_clear_reset_token')) {
 		$statement->execute([
 			'password_hash' => $passwordHash,
 			'id' => $userId,
-			'role' => 'user',
+			'role' => $role,
 		]);
 	}
 }

@@ -1827,6 +1827,10 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 
 				<button class="admin-login-form__forgot" type="button" data-modal-target="admin-reset-modal">Forgot your password?</button>
 
+				<?php if (($adminLoginSuccess ?? '') !== ''): ?>
+					<p class="admin-login-form__success" role="status"><?= htmlspecialchars($adminLoginSuccess, ENT_QUOTES, 'UTF-8') ?></p>
+				<?php endif; ?>
+
 				<?php if ($adminLoginError !== ''): ?>
 					<p class="admin-login-form__error" role="alert" data-admin-login-error><?= htmlspecialchars($adminLoginError, ENT_QUOTES, 'UTF-8') ?></p>
 				<?php endif; ?>
@@ -1841,7 +1845,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 	</section>
 </div>
 
-<?php // admin login: forgot-password confirmation modal ?>
+<?php // admin login: forgot-password email request modal ?>
 <div class="menu-modal admin-reset-modal" id="admin-reset-modal" hidden aria-hidden="true" data-modal-id="admin-reset-modal">
 	<div class="menu-modal__overlay" data-modal-close></div>
 
@@ -1862,12 +1866,29 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 		</header>
 
 		<div class="admin-reset-modal__content">
-			<span class="material-symbols-rounded admin-reset-modal__icon" aria-hidden="true">mail</span>
-			<h2 class="admin-reset-modal__title" id="admin-reset-title">Check your inbox</h2>
+			<span class="material-symbols-rounded admin-reset-modal__icon" aria-hidden="true">lock_reset</span>
+			<h2 class="admin-reset-modal__title" id="admin-reset-title">Reset Admin Password</h2>
 			<p class="admin-reset-modal__text">
-				You should receive an email in the next few minutes with a link to reset your password.
+				Enter the registered admin email address. RIDEX will send a secure reset link that expires after 1 hour.
 			</p>
-			<a class="admin-reset-modal__submit" href="index.php">Reset Password</a>
+
+			<form class="admin-login-form" method="post" action="index.php" autocomplete="off">
+				<input type="hidden" name="action" value="admin-forgot-password-request" />
+
+				<label class="admin-login-form__label" for="admin-reset-email-input">Admin Email</label>
+				<input
+					class="admin-login-form__input"
+					type="email"
+					id="admin-reset-email-input"
+					name="admin_reset_email"
+					placeholder="admin@example.com"
+					autocomplete="email"
+					required
+					value="<?= htmlspecialchars($adminLoginEmail ?? '', ENT_QUOTES, 'UTF-8') ?>"
+				/>
+
+				<button class="admin-reset-modal__submit" type="submit">Send Reset Link</button>
+			</form>
 		</div>
 
 		<button class="menu-modal__back admin-modal__back" type="button" aria-label="Back to previous view" data-modal-back>
