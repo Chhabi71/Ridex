@@ -62,7 +62,7 @@
     Position: <span id="posText">loading...</span>
 </div>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=MAPS_API_KEY"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBSGTC4KHr_F1MI92xDvs7LW6rJo282tEE"></script>
 
 <script>
 
