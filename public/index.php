@@ -7,10 +7,13 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../src/Helpers/vehicle_json_sync.php';
 require_once __DIR__ . '/../src/Helpers/runtime_sync.php';
 require_once __DIR__ . '/../src/Helpers/booking_flow.php';
+require_once __DIR__ . '/../src/Helpers/payments.php';
 require_once __DIR__ . '/../src/Helpers/auth.php';
 require_once __DIR__ . '/../src/Helpers/validation.php';
 require_once __DIR__ . '/../src/Helpers/url.php';
+require_once __DIR__ . '/../src/Helpers/mailer.php';
 require_once __DIR__ . '/../src/Helpers/logs.php';
+require_once __DIR__ . '/../src/Helpers/recommendations.php';
 require_once __DIR__ . '/../src/Models/BaseModel.php';
 require_once __DIR__ . '/../src/Models/Category.php';
 require_once __DIR__ . '/../src/Models/Session.php';
@@ -106,6 +109,8 @@ $userLoginError = '';
 $userLoginIdentifier = '';
 $userLoginIdentifierInvalid = false;
 $userLoginPasswordInvalid = false;
+$userLoginSuccess = '';
+$userLoginCanResendVerification = false;
 $userRegisterErrors = [];
 $userRegisterOld = [];
 $userRegisterSuccessEmail = '';
@@ -131,6 +136,18 @@ $isUserLogoutPost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
 	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-logout';
 
+$isUserForgotPasswordRequestPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-forgot-password-request';
+
+$isUserPasswordResetPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-password-reset';
+
+$isUserResendVerificationEmailPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-resend-verification-email';
+
 $isUserBookingCreatePost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
 	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-booking-create';
@@ -138,6 +155,10 @@ $isUserBookingCreatePost =
 $isUserBookingCancellationRequestPost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
 	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-request-booking-cancellation';
+
+$isUserVerificationReuploadPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'user-verification-reupload';
 
 $isAdminDeleteVehiclePost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
@@ -174,6 +195,10 @@ $isAdminApproveBookingCancellationPost =
 $isAdminDeleteBookingPost =
 	$_SERVER['REQUEST_METHOD'] === 'POST'
 	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'admin-delete-booking';
+
+$isAdminUserVerificationPost =
+	$_SERVER['REQUEST_METHOD'] === 'POST'
+	&& strtolower(trim((string) ($_POST['action'] ?? ''))) === 'admin-user-verification-update';
 
 $normalizePostAuthRedirect = static function ($rawRedirect): string {
 	return ridex_normalize_post_auth_redirect($rawRedirect);
@@ -291,6 +316,197 @@ $ensureGpsLogsTable = static function (PDO $pdo): void {
 
 $ensurePaymentsTable = static function (PDO $pdo): void {
 	ridex_payment_ensure_table($pdo);
+};
+
+
+$ensureUserEmailAuthColumns = static function (PDO $pdo): void {
+	$columns = [];
+	$columnRows = $pdo->query('SHOW COLUMNS FROM users')->fetchAll() ?: [];
+	foreach ($columnRows as $columnRow) {
+		$fieldName = strtolower(trim((string) ($columnRow['Field'] ?? '')));
+		if ($fieldName !== '') {
+			$columns[$fieldName] = true;
+		}
+	}
+
+	$hadEmailVerifiedColumn = isset($columns['email_verified']);
+
+	if (!$hadEmailVerifiedColumn) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN email_verified TINYINT(1) NOT NULL DEFAULT 0 AFTER drivers_id_image_path');
+	}
+	if (!isset($columns['email_verified_at'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL AFTER email_verified');
+	}
+	if (!isset($columns['email_verification_token_hash'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN email_verification_token_hash VARCHAR(255) NULL AFTER email_verified_at');
+	}
+	if (!isset($columns['email_verification_expires'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN email_verification_expires DATETIME NULL AFTER email_verification_token_hash');
+	}
+	if (!isset($columns['email_verification_sent_at'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN email_verification_sent_at DATETIME NULL AFTER email_verification_expires');
+	}
+	if (!isset($columns['password_reset_token_hash'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN password_reset_token_hash VARCHAR(255) NULL AFTER email_verification_expires');
+	}
+	if (!isset($columns['password_reset_expires'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN password_reset_expires DATETIME NULL AFTER password_reset_token_hash');
+	}
+	if (!isset($columns['password_reset_requested_at'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN password_reset_requested_at DATETIME NULL AFTER password_reset_expires');
+	}
+	if (!isset($columns['verification_status'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN verification_status ENUM("pending","verified","rejected") NOT NULL DEFAULT "pending" AFTER drivers_id_image_path');
+	}
+	if (!isset($columns['verification_reviewed_at'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN verification_reviewed_at DATETIME NULL AFTER verification_status');
+	}
+	if (!isset($columns['verification_reviewed_by'])) {
+		$pdo->exec('ALTER TABLE users ADD COLUMN verification_reviewed_by INT NULL AFTER verification_reviewed_at');
+	}
+
+	if (!$hadEmailVerifiedColumn) {
+		// Existing demo accounts were created before this feature existed, so keep them usable.
+		$pdo->exec('UPDATE users SET email_verified = 1, email_verified_at = COALESCE(email_verified_at, CURRENT_TIMESTAMP) WHERE role IN ("user", "admin")');
+	}
+};
+
+try {
+	$ensureUserEmailAuthColumns(db());
+} catch (Throwable $exception) {
+	ridex_log_exception('User email auth column setup failed', $exception);
+}
+
+if ($isUserResendVerificationEmailPost) {
+	$identifier = strtolower(trim((string) ($_POST['user_identifier'] ?? $_POST['email'] ?? '')));
+	$postAuthRedirect = $normalizePostAuthRedirect($_POST['post_auth_redirect'] ?? 'index.php');
+
+	try {
+		if ($identifier === '') {
+			throw new RuntimeException('Please enter your email address first, then resend the verification email.');
+		}
+
+		$pdo = db();
+		$ensureUserEmailAuthColumns($pdo);
+		$stmt = $pdo->prepare('SELECT id, name, email, COALESCE(email_verified, 0) AS email_verified, email_verification_sent_at FROM users WHERE role = :role AND LOWER(email) = LOWER(:identifier) LIMIT 1');
+		$stmt->execute([
+			'role' => 'user',
+			'identifier' => $identifier,
+		]);
+		$userForVerification = $stmt->fetch();
+
+		if (!is_array($userForVerification)) {
+			throw new RuntimeException('No user account was found for this email address.');
+		}
+
+		if ((int) ($userForVerification['email_verified'] ?? 0) === 1) {
+			ridex_session_set_flash('user_login_flash', [
+				'error' => '',
+				'success' => 'Your email is already verified. You can log in now.',
+				'identifier' => (string) ($userForVerification['email'] ?? $identifier),
+				'identifier_invalid' => false,
+				'password_invalid' => false,
+				'post_auth_redirect' => $postAuthRedirect,
+			]);
+			ridex_redirect('index.php', 303);
+		}
+
+		$lastSentRaw = trim((string) ($userForVerification['email_verification_sent_at'] ?? ''));
+		if ($lastSentRaw !== '') {
+			$lastSentAt = new DateTimeImmutable($lastSentRaw);
+			if ($lastSentAt > new DateTimeImmutable('-2 minutes')) {
+				throw new RuntimeException('Please wait 2 minutes before requesting another verification email.');
+			}
+		}
+
+		$newVerificationToken = bin2hex(random_bytes(32));
+		$newVerificationTokenHash = hash('sha256', $newVerificationToken);
+		$newVerificationExpires = (new DateTimeImmutable('+24 hours'))->format('Y-m-d H:i:s');
+		$updateStmt = $pdo->prepare('UPDATE users SET email_verified = 0, email_verified_at = NULL, email_verification_token_hash = :token_hash, email_verification_expires = :expires_at, email_verification_sent_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND role = :role LIMIT 1');
+		$updateStmt->execute([
+			'token_hash' => $newVerificationTokenHash,
+			'expires_at' => $newVerificationExpires,
+			'id' => (int) ($userForVerification['id'] ?? 0),
+			'role' => 'user',
+		]);
+
+		ridex_send_verification_email((string) ($userForVerification['email'] ?? ''), (string) ($userForVerification['name'] ?? 'Ridex user'), $newVerificationToken);
+
+		ridex_session_set_flash('user_login_flash', [
+			'error' => '',
+			'success' => 'Verification email sent again. Please check your inbox or spam folder.',
+			'identifier' => (string) ($userForVerification['email'] ?? $identifier),
+			'identifier_invalid' => false,
+			'password_invalid' => false,
+			'post_auth_redirect' => $postAuthRedirect,
+		]);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Resend verification email failed', $exception);
+		ridex_session_set_flash('user_login_flash', [
+			'error' => $exception->getMessage() ?: 'Unable to resend verification email right now.',
+			'success' => '',
+			'identifier' => $identifier,
+			'identifier_invalid' => $identifier === '',
+			'password_invalid' => false,
+			'post_auth_redirect' => $postAuthRedirect,
+			'can_resend_verification' => true,
+		]);
+	}
+
+	ridex_redirect('index.php', 303);
+}
+
+
+$fetchUserAccountVerificationState = static function (PDO $pdo, int $userId) use ($ensureUserEmailAuthColumns): array {
+	$ensureUserEmailAuthColumns($pdo);
+	if ($userId <= 0) {
+		return [
+			'email_verified' => 0,
+			'email_verified_at' => null,
+			'verification_status' => 'pending',
+			'drivers_id_image_path' => '',
+		];
+	}
+
+	$stmt = $pdo->prepare(
+		'SELECT COALESCE(email_verified, 0) AS email_verified,
+			email_verified_at,
+			COALESCE(verification_status, "pending") AS verification_status,
+			drivers_id_image_path
+		 FROM users
+		 WHERE id = :id AND role = "user"
+		 LIMIT 1'
+	);
+	$stmt->execute(['id' => $userId]);
+	$row = $stmt->fetch();
+	return is_array($row) ? $row : [
+		'email_verified' => 0,
+		'email_verified_at' => null,
+		'verification_status' => 'pending',
+		'drivers_id_image_path' => '',
+	];
+};
+
+$getUserBookingVerificationNotice = static function (array $verificationState): string {
+	$emailVerified = (int) ($verificationState['email_verified'] ?? 0) === 1
+		|| trim((string) ($verificationState['email_verified_at'] ?? '')) !== '';
+	$photoStatus = strtolower(trim((string) ($verificationState['verification_status'] ?? 'pending')));
+	$hasDocument = trim((string) ($verificationState['drivers_id_image_path'] ?? '')) !== '';
+
+	if (!$emailVerified) {
+		return 'Please verify your email before booking. Check your inbox or spam folder for the RIDEX verification link.';
+	}
+	if (!$hasDocument) {
+		return 'Please upload your license or ID photo before booking.';
+	}
+	if ($photoStatus === 'rejected') {
+		return 'Your ID verification was rejected. Please contact RIDEX support or upload a clearer document.';
+	}
+	if ($photoStatus !== 'verified') {
+		return 'Your email is verified, but your ID photo is still pending admin approval. You can book after admin verifies your account.';
+	}
+
+	return '';
 };
 
 $ensureVehicleGpsCoverage = static function () use ($ensureGpsLogsTable): void {
@@ -610,6 +826,10 @@ if ($isUserRegisterPost) {
 			$driverIdImageRelativePath = 'uploads/profiles/driver-ids/' . $driverIdImageFileName;
 		}
 
+		$emailVerificationToken = bin2hex(random_bytes(32));
+		$emailVerificationTokenHash = hash('sha256', $emailVerificationToken);
+		$emailVerificationExpires = (new DateTimeImmutable('+24 hours'))->format('Y-m-d H:i:s');
+
 		$newUserId = ridex_user_create_registered_user($pdo, [
 			'name' => $fullName,
 			'first_name' => $firstName,
@@ -625,26 +845,20 @@ if ($isUserRegisterPost) {
 			'province' => $province,
 			'drivers_id' => $driversId,
 			'drivers_id_image_path' => $driverIdImageRelativePath,
+			'email_verified' => 0,
+			'email_verification_token_hash' => $emailVerificationTokenHash,
+			'email_verification_expires' => $emailVerificationExpires,
 		]);
-		session_regenerate_id(true);
-		$_SESSION['auth_user'] = [
-			'id' => $newUserId,
-			'name' => $fullName,
-			'email' => $email,
-			'phone' => $phoneNumber,
-			'drivers_id' => $driversId,
-			'drivers_id_image_path' => $driverIdImageRelativePath,
-			'date_of_birth' => $dateOfBirth,
-			'role' => 'user',
-		];
 
-		ridex_session_pull_flash('user_register_flash');
-		$successfulRegisterRedirect = $normalizePostAuthRedirect($userPostAuthRedirectInput);
-		if ($successfulRegisterRedirect !== 'index.php') {
-			ridex_session_pull_flash('user_register_success');
-			ridex_redirect($successfulRegisterRedirect, 303);
+		$pdo->prepare('UPDATE users SET email_verification_sent_at = CURRENT_TIMESTAMP WHERE id = :id LIMIT 1')->execute(['id' => $newUserId]);
+
+		try {
+			ridex_send_verification_email($email, $fullName, $emailVerificationToken);
+		} catch (Throwable $mailException) {
+			ridex_log_exception('Verification email send failed', $mailException);
 		}
 
+		ridex_session_pull_flash('user_register_flash');
 		ridex_session_set_user_register_success($email, $subscribeNewsletter);
 		ridex_redirect('index.php', 303);
 	} catch (Throwable $exception) {
@@ -777,6 +991,120 @@ if ($isAdminDeleteVehiclePost) {
 	}
 
 	header('Location: ' . $deleteRedirectUrl, true, 303);
+	exit;
+}
+
+
+
+// user verification re-upload: lets rejected users submit a clearer document and returns status to pending.
+if ($isUserVerificationReuploadPost) {
+	$sessionUser = $_SESSION['auth_user'] ?? [];
+	$isUserSession = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'user');
+	if (!$isUserSession) {
+		$redirectWithUserLoginFlash('Please log in to re-upload your verification document.', '', false, false, 'index.php?page=reupload-verification');
+	}
+
+	$userId = (int) ($sessionUser['id'] ?? 0);
+	$upload = $_FILES['verification_document'] ?? null;
+	$error = '';
+
+	try {
+		$pdo = db();
+		$ensureUserEmailAuthColumns($pdo);
+		if ($userId <= 0 || !is_array($upload) || (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+			throw new RuntimeException('Please choose a valid verification photo.');
+		}
+		$tmpPath = (string) ($upload['tmp_name'] ?? '');
+		$originalName = (string) ($upload['name'] ?? 'document');
+		if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+			throw new RuntimeException('Please choose a valid verification photo.');
+		}
+		$ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+		$allowed = ['jpg', 'jpeg', 'png', 'webp'];
+		if (!in_array($ext, $allowed, true)) {
+			throw new RuntimeException('Only JPG, PNG, and WEBP files are allowed.');
+		}
+		$uploadDir = APP_ROOT . '/public/uploads/profiles/driver-ids';
+		if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+			throw new RuntimeException('Unable to create upload directory.');
+		}
+		$fileName = 'driver-id-' . $userId . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+		$absolutePath = rtrim($uploadDir, '\\/') . DIRECTORY_SEPARATOR . $fileName;
+		if (!move_uploaded_file($tmpPath, $absolutePath)) {
+			throw new RuntimeException('Upload failed. Please try again.');
+		}
+		$relativePath = 'uploads/profiles/driver-ids/' . $fileName;
+		$stmt = $pdo->prepare('UPDATE users SET drivers_id_image_path = :path, verification_status = "pending", verification_reviewed_at = NULL, verification_reviewed_by = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND role = "user" LIMIT 1');
+		$stmt->execute(['path' => $relativePath, 'id' => $userId]);
+		$_SESSION['verification_reupload_success'] = 'Your new verification photo was uploaded. Please wait for admin review.';
+	} catch (Throwable $exception) {
+		ridex_log_exception('User verification re-upload failed', $exception);
+		$_SESSION['verification_reupload_error'] = $exception->getMessage() ?: 'Unable to upload verification document.';
+	}
+
+	header('Location: index.php?page=reupload-verification', true, 303);
+	exit;
+}
+
+// admin user verification actions: approve or reject customer identity documents.
+if ($isAdminUserVerificationPost) {
+	$sessionUser = $_SESSION['auth_user'] ?? [];
+	$isAdminSession = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'admin');
+
+	if (!$isAdminSession) {
+		header('Location: index.php', true, 302);
+		exit;
+	}
+
+	$userId = (int) ($_POST['user_id'] ?? 0);
+	$decision = strtolower(trim((string) ($_POST['verification_decision'] ?? '')));
+	if (!in_array($decision, ['verified', 'rejected', 'pending'], true)) {
+		$decision = 'pending';
+	}
+
+	try {
+		$pdo = db();
+		$ensureUserEmailAuthColumns($pdo);
+		if ($userId > 0) {
+			$userLookupStmt = $pdo->prepare('SELECT id, name, email, COALESCE(verification_status, "pending") AS current_verification_status FROM users WHERE id = :id AND role = :role LIMIT 1');
+			$userLookupStmt->execute([
+				'id' => $userId,
+				'role' => 'user',
+			]);
+			$verificationUser = $userLookupStmt->fetch() ?: null;
+
+			$updateVerificationStmt = $pdo->prepare(
+				'UPDATE users
+				 SET verification_status = :verification_status,
+					 verification_reviewed_at = CURRENT_TIMESTAMP,
+					 verification_reviewed_by = :reviewed_by,
+					 updated_at = CURRENT_TIMESTAMP
+				 WHERE id = :id AND role = :role'
+			);
+			$updateVerificationStmt->execute([
+				'verification_status' => $decision,
+				'reviewed_by' => (int) ($sessionUser['id'] ?? 0),
+				'id' => $userId,
+				'role' => 'user',
+			]);
+
+			if (is_array($verificationUser) && in_array($decision, ['verified', 'rejected'], true) && strtolower((string) ($verificationUser['current_verification_status'] ?? 'pending')) !== $decision) {
+				try {
+					ridex_send_account_verification_decision_email(
+						(string) ($verificationUser['email'] ?? ''),
+						(string) ($verificationUser['name'] ?? 'Ridex user'),
+						$decision
+					);
+				} catch (Throwable $mailException) {
+					ridex_log_exception('Admin user verification notification email failed', $mailException);
+				}
+			}
+		}
+	} catch (Throwable $exception) {
+		ridex_log_exception('Admin user verification update failed', $exception);
+	}
+
+	header('Location: index.php?page=admin-user-verifications', true, 303);
 	exit;
 }
 
@@ -2427,6 +2755,8 @@ if (!$isUserLoginPost) {
 		$userLoginIdentifier = trim((string) ($userLoginFlash['identifier'] ?? ''));
 		$userLoginIdentifierInvalid = (bool) ($userLoginFlash['identifier_invalid'] ?? false);
 		$userLoginPasswordInvalid = (bool) ($userLoginFlash['password_invalid'] ?? false);
+		$userLoginSuccess = trim((string) ($userLoginFlash['success'] ?? ''));
+		$userLoginCanResendVerification = (bool) ($userLoginFlash['can_resend_verification'] ?? false);
 		$userPostAuthRedirect = $normalizePostAuthRedirect($userLoginFlash['post_auth_redirect'] ?? $userPostAuthRedirect);
 	}
 }
@@ -2600,6 +2930,19 @@ if ($isUserLoginPost) {
 				);
 			}
 
+			if ((int) ($userAccount['email_verified'] ?? 0) !== 1) {
+				ridex_session_set_flash('user_login_flash', [
+					'error' => 'Please verify your email before logging in. Check your inbox or spam folder for the RIDEX verification link.',
+					'success' => '',
+					'identifier' => (string) ($userAccount['email'] ?? $userLoginIdentifier),
+					'identifier_invalid' => false,
+					'password_invalid' => false,
+					'post_auth_redirect' => $userPostAuthRedirectInput,
+					'can_resend_verification' => true,
+				]);
+				ridex_redirect('index.php', 303);
+			}
+
 			$requiresBookingAgeCheck = $isBookingPageRedirect($userPostAuthRedirectInput);
 			if ($requiresBookingAgeCheck && !$isUserEligibleForBooking($userAccount)) {
 				$redirectWithUserLoginFlash(
@@ -2626,6 +2969,65 @@ if ($isUserLoginPost) {
 				$userPostAuthRedirectInput
 			);
 		}
+	}
+}
+
+
+if ($isUserPasswordResetPost) {
+	$resetToken = trim((string) ($_POST['reset_token'] ?? ''));
+	$newPassword = (string) ($_POST['new_password'] ?? '');
+	$confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+	$resetTokenHash = $resetToken !== '' ? hash('sha256', $resetToken) : '';
+
+	$resetRedirect = 'index.php?' . http_build_query([
+		'page' => 'reset-password',
+		'token' => $resetToken,
+	]);
+
+	try {
+		$pdo = db();
+		$resetUser = ridex_user_find_by_password_reset_token($pdo, $resetTokenHash);
+		$resetErrors = [];
+
+		if (!is_array($resetUser)) {
+			$resetErrors[] = 'This password reset link is invalid.';
+		} else {
+			$expiresRaw = trim((string) ($resetUser['password_reset_expires'] ?? ''));
+			$expiresAt = $expiresRaw !== '' ? new DateTimeImmutable($expiresRaw) : null;
+			if (!$expiresAt instanceof DateTimeImmutable || $expiresAt < new DateTimeImmutable('now')) {
+				$resetErrors[] = 'This password reset link has expired. Please request a new link.';
+			}
+		}
+
+		if ($newPassword === '' || $confirmPassword === '') {
+			$resetErrors[] = 'Please enter and confirm your new password.';
+		} elseif ($newPassword !== $confirmPassword) {
+			$resetErrors[] = 'The new password and confirmation do not match.';
+		} elseif (!ridex_is_valid_password_strength($newPassword)) {
+			$resetErrors[] = 'Password must contain lowercase, uppercase, digit, symbol, and at least 8 characters.';
+		}
+
+		if (!empty($resetErrors)) {
+			$_SESSION['password_reset_flash'] = [
+				'errors' => $resetErrors,
+			];
+			ridex_redirect($resetRedirect, 303);
+		}
+
+		$passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+		if (!is_string($passwordHash) || $passwordHash === '') {
+			throw new RuntimeException('Unable to hash reset password.');
+		}
+
+		ridex_user_update_password_and_clear_reset_token($pdo, (int) ($resetUser['id'] ?? 0), $passwordHash);
+		$_SESSION['password_reset_success'] = ['message' => 'Password updated successfully. You can now log in with your new password.'];
+		ridex_redirect('index.php?page=reset-password&status=success', 303);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Password reset failed', $exception);
+		$_SESSION['password_reset_flash'] = [
+			'errors' => ['Unable to reset password right now. Please try again.'],
+		];
+		ridex_redirect($resetRedirect, 303);
 	}
 }
 
@@ -3246,7 +3648,7 @@ if ($isUserBookingCreatePost) {
 	$bookingSearch = $sanitizeBookingSearchInput($_POST);
 	$vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
 	$vehicleType = $sanitizeVehicleType($_POST['vehicle_type'] ?? 'cars');
-	$paymentMethod = 'pay_on_arrival';
+	$paymentMethod = ($_POST['payment_method'] ?? '') === 'khalti' ? 'khalti' : 'pay_on_arrival';
 
 	$checkoutRedirectQuery = array_merge(
 		[
@@ -3294,6 +3696,20 @@ if ($isUserBookingCreatePost) {
 	$userId = (int) ($sessionUser['id'] ?? 0);
 	if ($userId <= 0) {
 		header('Location: index.php', true, 303);
+		exit;
+	}
+
+	try {
+		$accountVerificationNotice = $getUserBookingVerificationNotice(
+			$fetchUserAccountVerificationState(db(), $userId)
+		);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Booking create account verification check failed', $exception);
+		$accountVerificationNotice = 'Unable to verify your account status right now. Please try again.';
+	}
+	if ($accountVerificationNotice !== '') {
+		$checkoutRedirectQuery['booking_notice'] = $accountVerificationNotice;
+		header('Location: index.php?' . http_build_query($checkoutRedirectQuery), true, 303);
 		exit;
 	}
 
@@ -3454,15 +3870,12 @@ if ($isUserBookingCreatePost) {
 		]);
 
 		$paymentAmount = (int) ($priceBreakdown['total_amount'] ?? 0);
-		$paymentMethodValue = 'cash';
-		$paymentStatusValue = 'initiated';
-		$paymentProviderResponse = json_encode([
+		$paymentMethodValue = $paymentMethod === 'khalti' ? 'khalti' : 'cash';
+		$paymentStatusValue = $paymentMethod === 'khalti' ? 'pending' : 'initiated';
+		$paymentProviderResponse = ridex_json_encode_safe([
 			'source' => 'booking-flow',
 			'payment_method' => $paymentMethod,
-		], JSON_UNESCAPED_SLASHES);
-		if (!is_string($paymentProviderResponse)) {
-			$paymentProviderResponse = '{}';
-		}
+		]);
 
 		$insertPaymentStmt = $pdo->prepare(
 			'INSERT INTO payments (
@@ -3501,6 +3914,85 @@ if ($isUserBookingCreatePost) {
 			$bookingFlowToken = bin2hex(random_bytes(12));
 		} catch (Throwable $randomException) {
 			$bookingFlowToken = sha1(uniqid((string) $nextBookingId, true));
+		}
+		if ($paymentMethod === 'khalti') {
+			$khaltiResult = ridex_khalti_initiate_payment(
+				$nextBookingId,
+				$bookingNumber,
+				(int) ($priceBreakdown['total_amount'] ?? 0),
+				$bookingFlowToken
+			);
+			$khaltiData = $khaltiResult['data'] ?? [];
+
+			if (!($khaltiResult['ok'] ?? false) || (int) ($khaltiResult['http_code'] ?? 0) === 504 || empty($khaltiData['payment_url'])) {
+				$fallbackMessage = 'Khalti payment server is temporarily unavailable. Your booking is confirmed, but online payment was not completed. Please pay by cash when you collect the vehicle.';
+				try {
+					$fallbackPdo = db();
+					$fallbackPdo->prepare(
+						"UPDATE bookings SET payment_method = 'pay_on_arrival', payment_status = 'pending', paid_amount = 0, updated_at = CURRENT_TIMESTAMP WHERE id = :id"
+					)->execute(['id' => $nextBookingId]);
+					$fallbackPdo->prepare(
+						"UPDATE payments SET method = 'cash', status = 'initiated', provider_response = :provider_response, updated_at = CURRENT_TIMESTAMP WHERE booking_id = :id ORDER BY id DESC LIMIT 1"
+					)->execute([
+						'id' => $nextBookingId,
+						'provider_response' => json_encode([
+							'khalti_error' => true,
+							'http_code' => (int) ($khaltiResult['http_code'] ?? 0),
+							'message' => $fallbackMessage,
+						], JSON_UNESCAPED_SLASHES),
+					]);
+				} catch (Throwable $fallbackException) {
+					error_log('Khalti fallback update failed: ' . $fallbackException->getMessage());
+				}
+
+				$_SESSION['booking_flow_lock'] = [
+					'booking_id' => $nextBookingId,
+					'token' => $bookingFlowToken,
+				];
+
+				header(
+					'Location: index.php?page=booking-thank-you&booking_id=' . urlencode((string) $nextBookingId)
+					. '&flow_token=' . urlencode($bookingFlowToken)
+					. '&payment_notice=' . urlencode($fallbackMessage),
+					true,
+					303
+				);
+				exit;
+			}
+
+			try {
+				$khaltiPidx = trim((string) ($khaltiData['pidx'] ?? ''));
+				$khaltiProviderResponse = ridex_json_encode_safe([
+					'source' => 'khalti-initiate',
+					'requested_amount' => (int) ($priceBreakdown['total_amount'] ?? 0),
+					'response' => $khaltiData,
+				]);
+				db()->prepare(
+					'UPDATE payments
+					 SET method = "khalti",
+						 status = "pending",
+						 pidx = NULLIF(:pidx, ""),
+						 provider_response = :provider_response,
+						 updated_at = CURRENT_TIMESTAMP
+					 WHERE booking_id = :booking_id
+					 ORDER BY id DESC
+					 LIMIT 1'
+				)->execute([
+					'booking_id' => $nextBookingId,
+					'pidx' => $khaltiPidx,
+					'provider_response' => $khaltiProviderResponse,
+				]);
+			} catch (Throwable $paymentStoreException) {
+				error_log('Khalti initiate payment row update failed: ' . $paymentStoreException->getMessage());
+			}
+
+			$_SESSION['booking_flow_lock'] = [
+				'booking_id' => $nextBookingId,
+				'token' => $bookingFlowToken,
+			];
+
+			header('Location: ' . $khaltiData['payment_url']);
+			exit;
 		}
 
 		$_SESSION['booking_flow_lock'] = [
@@ -3713,13 +4205,35 @@ if ($page === 'user-auth-lookup') {
 				$lookupStatusCode = 400;
 				$lookupResponse['message'] = 'Please enter your Driver ID.';
 			} else {
-				$lookupUserId = ridex_user_find_id_by_email_and_driver($pdo, $lookupEmail, $lookupDriversId);
+				$lookupUser = ridex_user_find_by_email_and_driver($pdo, $lookupEmail, $lookupDriversId);
 
-				if ($lookupUserId > 0) {
-					$lookupResponse = [
-						'ok' => true,
-						'message' => 'Driver ID verified.',
-					];
+				if (is_array($lookupUser)) {
+					$resetToken = bin2hex(random_bytes(32));
+					$resetTokenHash = hash('sha256', $resetToken);
+					$resetExpires = new DateTimeImmutable('+1 hour');
+					ridex_user_store_password_reset_token($pdo, (int) ($lookupUser['id'] ?? 0), $resetTokenHash, $resetExpires);
+
+					try {
+						$resetEmailSent = ridex_send_password_reset_email(
+							(string) ($lookupUser['email'] ?? $lookupEmail),
+							ridex_build_user_display_name($lookupUser),
+							$resetToken
+						);
+						if (!$resetEmailSent) {
+							throw new RuntimeException('SMTP mail settings are not configured.');
+						}
+					} catch (Throwable $mailException) {
+						ridex_log_exception('Password reset email send failed', $mailException);
+						$lookupStatusCode = 500;
+						$lookupResponse['message'] = 'Driver ID matched, but the reset email could not be sent. Please check SMTP settings.';
+					}
+
+					if ($lookupStatusCode !== 500) {
+						$lookupResponse = [
+							'ok' => true,
+							'message' => 'Password reset email sent.',
+						];
+					}
 				} else {
 					$lookupResponse['message'] = 'Driver ID does not match the entered email.';
 				}
@@ -3768,6 +4282,104 @@ if ($page === 'user-auth-lookup') {
 	}
 
 	echo $lookupJson;
+	exit;
+}
+
+
+if ($page === 'verify-email') {
+	$verificationToken = trim((string) ($_GET['token'] ?? ''));
+	$statusTitle = 'Email Verification';
+	$statusMessage = 'This verification link is invalid.';
+	$statusType = 'error';
+
+	if ($verificationToken !== '') {
+		try {
+			$pdo = db();
+			$tokenHash = hash('sha256', $verificationToken);
+			$verificationUser = ridex_user_find_by_email_verification_token($pdo, $tokenHash);
+
+			if (is_array($verificationUser)) {
+				$expiresRaw = trim((string) ($verificationUser['email_verification_expires'] ?? ''));
+				$expiresAt = $expiresRaw !== '' ? new DateTimeImmutable($expiresRaw) : null;
+
+				if ($expiresAt instanceof DateTimeImmutable && $expiresAt >= new DateTimeImmutable('now')) {
+					ridex_user_mark_email_verified($pdo, (int) ($verificationUser['id'] ?? 0));
+					$statusTitle = 'Email Verified';
+					$statusMessage = 'Your RIDEX email has been verified successfully. You can now log in.';
+					$statusType = 'success';
+				} else {
+					$statusMessage = 'This verification link has expired. Please create a new account or ask for a new verification link.';
+				}
+			}
+		} catch (Throwable $exception) {
+			ridex_log_exception('Email verification failed', $exception);
+			$statusMessage = 'Unable to verify your email right now. Please try again.';
+		}
+	}
+
+	$title = 'Ridex | Verify Email';
+	$view = 'user/email-status';
+	$viewData = [
+		'statusTitle' => $statusTitle,
+		'statusMessage' => $statusMessage,
+		'statusType' => $statusType,
+	];
+	require __DIR__ . '/../src/Templates/layout.php';
+	exit;
+}
+
+if ($page === 'reset-password') {
+	$resetToken = trim((string) ($_GET['token'] ?? ''));
+	$isResetSuccess = strtolower(trim((string) ($_GET['status'] ?? ''))) === 'success';
+	$resetErrors = [];
+	$resetMessage = '';
+	$isResetValid = false;
+
+	$resetFlash = ridex_session_pull_flash('password_reset_flash');
+	if (is_array($resetFlash) && isset($resetFlash['errors']) && is_array($resetFlash['errors'])) {
+		$resetErrors = $resetFlash['errors'];
+	}
+
+	if ($isResetSuccess) {
+		$successMessage = ridex_session_pull_flash('password_reset_success');
+		$resetMessage = is_array($successMessage) && trim((string) ($successMessage['message'] ?? '')) !== ''
+			? trim((string) ($successMessage['message'] ?? ''))
+			: 'Password updated successfully. You can now log in with your new password.';
+	} elseif ($resetToken === '') {
+		$resetErrors[] = 'This password reset link is invalid.';
+	} else {
+		try {
+			$pdo = db();
+			$tokenHash = hash('sha256', $resetToken);
+			$resetUser = ridex_user_find_by_password_reset_token($pdo, $tokenHash);
+			if (is_array($resetUser)) {
+				$expiresRaw = trim((string) ($resetUser['password_reset_expires'] ?? ''));
+				$expiresAt = $expiresRaw !== '' ? new DateTimeImmutable($expiresRaw) : null;
+				if ($expiresAt instanceof DateTimeImmutable && $expiresAt >= new DateTimeImmutable('now')) {
+					$isResetValid = true;
+					$resetMessage = 'Enter a new password for your RIDEX account. This reset link expires after 1 hour.';
+				} else {
+					$resetErrors[] = 'This password reset link has expired. Please request a new one.';
+				}
+			} else {
+				$resetErrors[] = 'This password reset link is invalid.';
+			}
+		} catch (Throwable $exception) {
+			ridex_log_exception('Password reset page failed', $exception);
+			$resetErrors[] = 'Unable to verify reset link right now. Please try again.';
+		}
+	}
+
+	$title = 'Ridex | Reset Password';
+	$view = 'user/reset-password';
+	$viewData = [
+		'resetToken' => $resetToken,
+		'resetErrors' => $resetErrors,
+		'isResetValid' => $isResetValid,
+		'isResetSuccess' => $isResetSuccess,
+		'resetMessage' => $resetMessage,
+	];
+	require __DIR__ . '/../src/Templates/layout.php';
 	exit;
 }
 
@@ -3838,9 +4450,9 @@ if ($page === 'booking-select') {
 		$selectedPriceMax = $tempPrice;
 	}
 
-	$selectedSortPrice = strtolower(trim((string) ($_GET['sort_price'] ?? 'high')));
-	if (!in_array($selectedSortPrice, ['low', 'high'], true)) {
-		$selectedSortPrice = 'high';
+	$selectedSortPrice = strtolower(trim((string) ($_GET['sort_price'] ?? 'recommended')));
+	if (!in_array($selectedSortPrice, ['recommended', 'low', 'high'], true)) {
+		$selectedSortPrice = 'recommended';
 	}
 
 	$isFlowStartRequest = trim((string) ($_GET['flow_start'] ?? '')) === '1';
@@ -4015,13 +4627,29 @@ if ($page === 'booking-select') {
 				$params['requested_return'] = $returnDateTime->format('Y-m-d H:i:s');
 			}
 
-			$sql .= $selectedSortPrice === 'low'
-				? ' ORDER BY v.price_per_day ASC, v.id ASC'
-				: ' ORDER BY v.price_per_day DESC, v.id DESC';
+			if ($selectedSortPrice === 'low') {
+				$sql .= ' ORDER BY v.price_per_day ASC, v.id ASC';
+			} elseif ($selectedSortPrice === 'high') {
+				$sql .= ' ORDER BY v.price_per_day DESC, v.id DESC';
+			} else {
+				$sql .= ' ORDER BY v.id DESC';
+			}
 
 			$selectVehiclesStmt = $pdo->prepare($sql);
 			$selectVehiclesStmt->execute($params);
 			$bookingSelectVehicles = $selectVehiclesStmt->fetchAll() ?: [];
+
+			if ($selectedSortPrice === 'recommended' && !empty($bookingSelectVehicles)) {
+				$recommendationProfile = ridex_recommendation_get_user_profile(
+					$pdo,
+					$userId,
+					$selectedVehicleType,
+					$selectedPriceMin,
+					$selectedPriceMax,
+					$selectedFilterTypes
+				);
+				$bookingSelectVehicles = ridex_recommendation_rank_vehicles($bookingSelectVehicles, $recommendationProfile);
+			}
 
 			if (empty($bookingSelectVehicles)) {
 				$bookingNoAvailabilityMessage = 'No vehicles available for the selected date and filters.';
@@ -4118,6 +4746,20 @@ if ($page === 'booking-select') {
 		exit;
 	}
 
+	$accountVerificationNotice = '';
+	try {
+		$accountVerificationNotice = $getUserBookingVerificationNotice(
+			$fetchUserAccountVerificationState(db(), $sessionUserId)
+		);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Booking engine account verification check failed', $exception);
+		$accountVerificationNotice = 'Unable to verify your account status right now. Please try again.';
+	}
+	if ($accountVerificationNotice !== '') {
+		$bookingNotice = $accountVerificationNotice;
+		$directUnavailable = true;
+	}
+
 	$userHasOverdueBooking = false;
 	try {
 		$userHasOverdueBooking = $doesUserHaveOverdueBooking(db(), $sessionUserId);
@@ -4142,7 +4784,10 @@ if ($page === 'booking-select') {
 	}
 
 	if ($directAttempt) {
-		if ($userHasOverdueBooking) {
+		if ($accountVerificationNotice !== '') {
+			$bookingNotice = $accountVerificationNotice;
+			$directUnavailable = true;
+		} elseif ($userHasOverdueBooking) {
 			$bookingNotice = $bookingVehicleOverdueMessage;
 			$directUnavailable = true;
 		} elseif (!$bookingSearch['is_valid']) {
@@ -4221,6 +4866,7 @@ if ($page === 'booking-select') {
 	$bookingSearch = $sanitizeBookingSearchInput($_GET);
 	$bookingSearchQuery = $buildBookingSearchQuery($bookingSearch);
 	$bookingNotice = trim((string) ($_GET['booking_notice'] ?? ''));
+	$bookingCheckoutButtonsDisabled = false;
 	$isFlowStartRequest = trim((string) ($_GET['flow_start'] ?? '')) === '1';
 
 	if ($isFlowStartRequest) {
@@ -4278,6 +4924,20 @@ if ($page === 'booking-select') {
 		);
 		header('Location: index.php?' . http_build_query($underageRedirectQuery), true, 303);
 		exit;
+	}
+
+	$accountVerificationNotice = '';
+	try {
+		$accountVerificationNotice = $getUserBookingVerificationNotice(
+			$fetchUserAccountVerificationState(db(), $sessionUserId)
+		);
+	} catch (Throwable $exception) {
+		ridex_log_exception('Booking checkout account verification check failed', $exception);
+		$accountVerificationNotice = 'Unable to verify your account status right now. Please try again.';
+	}
+	if ($accountVerificationNotice !== '') {
+		$bookingNotice = $accountVerificationNotice;
+		$bookingCheckoutButtonsDisabled = true;
 	}
 
 	$userHasOverdueBooking = false;
@@ -4417,9 +5077,77 @@ if ($page === 'booking-select') {
 		'bookingPriceBreakdown' => $bookingPriceBreakdown,
 		'checkoutBookingNumberPreview' => $checkoutBookingNumberPreview,
 		'bookingNotice' => $bookingNotice,
-		'bookingCheckoutPayNowDisabled' => true,
+		'bookingCheckoutPayNowDisabled' => $bookingCheckoutButtonsDisabled,
 	];
+} elseif ($page === 'khalti-callback') {
+	$callbackRequest = array_merge($_GET, $_POST);
+	$callbackBookingId = ridex_khalti_extract_booking_id($callbackRequest);
+	$callbackFlowToken = trim((string) ($callbackRequest['flow_token'] ?? ''));
+	$callbackPidx = trim((string) ($callbackRequest['pidx'] ?? ''));
+	$paymentNotice = '';
+
+	try {
+		$callbackPdo = db();
+		if ($callbackBookingId > 0) {
+			if ($callbackPidx === '') {
+				$callbackPidx = ridex_khalti_latest_pidx_for_booking($callbackPdo, $callbackBookingId);
+			}
+
+			$finalizeResult = ridex_finalize_khalti_payment($callbackPdo, $callbackBookingId, $callbackPidx);
+			if (!($finalizeResult['ok'] ?? false)) {
+				$paymentNotice = (string) ($finalizeResult['message'] ?? 'Khalti payment could not be verified.');
+			}
+		} else {
+			$paymentNotice = 'Khalti returned without a valid booking reference.';
+		}
+	} catch (Throwable $exception) {
+		error_log('Khalti callback failed: ' . $exception->getMessage());
+		$paymentNotice = 'Khalti payment was completed, but the system could not update the booking automatically. Please contact admin.';
+	}
+
+	if ($callbackBookingId > 0) {
+		if ($callbackFlowToken === '') {
+			try {
+				$callbackFlowToken = bin2hex(random_bytes(12));
+			} catch (Throwable $randomException) {
+				$callbackFlowToken = sha1(uniqid((string) $callbackBookingId, true));
+			}
+		}
+		$_SESSION['booking_flow_lock'] = [
+			'booking_id' => $callbackBookingId,
+			'token' => $callbackFlowToken,
+		];
+	}
+
+	$redirectQuery = [
+		'page' => 'booking-thank-you',
+		'booking_id' => $callbackBookingId,
+	];
+	if ($callbackFlowToken !== '') {
+		$redirectQuery['flow_token'] = $callbackFlowToken;
+	}
+	if ($paymentNotice !== '') {
+		$redirectQuery['payment_notice'] = $paymentNotice;
+	}
+
+	header('Location: index.php?' . http_build_query($redirectQuery), true, 303);
+	exit;
 } elseif ($page === 'booking-thank-you') {
+	$paymentNotice = trim((string) ($_GET['payment_notice'] ?? ''));
+	if (!empty($_GET['pidx'])) {
+		$legacyCallbackBookingId = ridex_khalti_extract_booking_id($_GET);
+		$legacyFlowToken = trim((string) ($_GET['flow_token'] ?? ''));
+		$legacyRedirectQuery = [
+			'page' => 'khalti-callback',
+			'booking_id' => $legacyCallbackBookingId,
+			'pidx' => (string) $_GET['pidx'],
+		];
+		if ($legacyFlowToken !== '') {
+			$legacyRedirectQuery['flow_token'] = $legacyFlowToken;
+		}
+		header('Location: index.php?' . http_build_query($legacyRedirectQuery), true, 303);
+		exit;
+	}
 	$bookingId = (int) ($_GET['booking_id'] ?? 0);
 	$requestedFlowToken = trim((string) ($_GET['flow_token'] ?? ''));
 	$sessionUser = $_SESSION['auth_user'] ?? [];
@@ -4549,6 +5277,7 @@ if ($page === 'booking-select') {
 		'bookingReceiptModalData' => $bookingReceiptModalData,
 		'bookingReceiptRow' => $bookingReceiptRow,
 		'bookingFlowHomeUrl' => 'index.php',
+		'bookingPaymentNotice' => $paymentNotice,
 	];
 } elseif ($page === 'booking-receipt-download') {
 	$bookingId = (int) ($_GET['booking_id'] ?? 0);
@@ -4802,12 +5531,19 @@ if ($page === 'booking-select') {
 			'SELECT
 				v.*,
 				c.name AS category_name,
+				COALESCE(vehicle_popularity.booking_count, 0) AS booking_count,
 				active_booking.status AS active_booking_status,
 				active_booking.pickup_datetime AS active_pickup_datetime,
 				active_booking.return_datetime AS active_return_datetime,
 				upcoming_booking.pickup_datetime AS upcoming_pickup_datetime
 			FROM vehicles v
 			INNER JOIN categories c ON c.id = v.category_id
+			LEFT JOIN (
+				SELECT vehicle_id, COUNT(*) AS booking_count
+				FROM bookings
+				WHERE status IN ("reserved", "on_trip", "overdue", "completed")
+				GROUP BY vehicle_id
+			) vehicle_popularity ON vehicle_popularity.vehicle_id = v.id
 			LEFT JOIN bookings active_booking ON active_booking.id = (
 				SELECT b1.id
 				FROM bookings b1
@@ -5614,6 +6350,62 @@ if ($page === 'booking-select') {
 		'openBookingId' => $openBookingId,
 		'adminBookings' => $adminBookings,
 	];
+} elseif ($page === 'reupload-verification') {
+	$sessionUser = $_SESSION['auth_user'] ?? [];
+	$isUserSession = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'user');
+	if (!$isUserSession) {
+		$redirectWithUserLoginFlash('Please log in to re-upload your verification document.', '', false, false, 'index.php?page=reupload-verification');
+	}
+	$title = 'Ridex | Re-upload Verification';
+	$view = 'user/reupload-verification';
+	$viewData = [
+		'userName' => (string) ($sessionUser['name'] ?? 'Ridex User'),
+		'successMessage' => (string) ($_SESSION['verification_reupload_success'] ?? ''),
+		'errorMessage' => (string) ($_SESSION['verification_reupload_error'] ?? ''),
+	];
+	unset($_SESSION['verification_reupload_success'], $_SESSION['verification_reupload_error']);
+} elseif ($page === 'admin-user-verifications') {
+	$sessionUser = $_SESSION['auth_user'] ?? [];
+	$isAdminSession = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'admin');
+
+	if (!$isAdminSession) {
+		header('Location: index.php', true, 302);
+		exit;
+	}
+
+	$verificationStatusFilter = strtolower(trim((string) ($_GET['status'] ?? 'all')));
+	if (!in_array($verificationStatusFilter, ['all', 'pending', 'verified', 'rejected'], true)) {
+		$verificationStatusFilter = 'all';
+	}
+
+	$verificationRows = [];
+	try {
+		$pdo = db();
+		$ensureUserEmailAuthColumns($pdo);
+		$sql = 'SELECT id, name, email, phone, drivers_id, drivers_id_image_path, COALESCE(email_verified, 0) AS email_verified, email_verified_at, COALESCE(verification_status, "pending") AS verification_status, verification_reviewed_at, created_at
+			FROM users
+			WHERE role = "user"';
+		$params = [];
+		if ($verificationStatusFilter !== 'all') {
+			$sql .= ' AND COALESCE(verification_status, "pending") = :verification_status';
+			$params['verification_status'] = $verificationStatusFilter;
+		}
+		$sql .= ' ORDER BY CASE COALESCE(verification_status, "pending") WHEN "pending" THEN 0 WHEN "rejected" THEN 1 ELSE 2 END ASC, id DESC';
+		$verificationStmt = $pdo->prepare($sql);
+		$verificationStmt->execute($params);
+		$verificationRows = $verificationStmt->fetchAll() ?: [];
+	} catch (Throwable $exception) {
+		ridex_log_exception('Admin user verification page failed', $exception);
+		$verificationRows = [];
+	}
+
+	$title = 'Ridex | User Verifications';
+	$view = 'admin/users/verifications';
+	$viewData = [
+		'adminUserName' => (string) ($sessionUser['name'] ?? 'Admin'),
+		'verificationRows' => $verificationRows,
+		'verificationStatusFilter' => $verificationStatusFilter,
+	];
 } elseif ($page === 'admin-live-tracking') {
 	$sessionUser = $_SESSION['auth_user'] ?? [];
 	$isAdminSession = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'admin');
@@ -5690,18 +6482,27 @@ if ($page === 'booking-select') {
 } else {
 	$selectedHomeVehicleType = $sanitizeVehicleType($_GET['featured_type'] ?? 'cars');
 	$featuredVehicles = [];
+	$recommendedVehicles = [];
 
 	try {
-		$statement = db()->prepare(
+		$pdo = db();
+		$statement = $pdo->prepare(
 			'SELECT
 				v.*,
 				c.name AS category_name,
+				COALESCE(vehicle_popularity.booking_count, 0) AS booking_count,
 				active_booking.status AS active_booking_status,
 				active_booking.pickup_datetime AS active_pickup_datetime,
 				active_booking.return_datetime AS active_return_datetime,
 				upcoming_booking.pickup_datetime AS upcoming_pickup_datetime
 			FROM vehicles v
 			INNER JOIN categories c ON c.id = v.category_id
+			LEFT JOIN (
+				SELECT vehicle_id, COUNT(*) AS booking_count
+				FROM bookings
+				WHERE status IN ("reserved", "on_trip", "overdue", "completed")
+				GROUP BY vehicle_id
+			) vehicle_popularity ON vehicle_popularity.vehicle_id = v.id
 			LEFT JOIN bookings active_booking ON active_booking.id = (
 				SELECT b1.id
 				FROM bookings b1
@@ -5729,6 +6530,7 @@ if ($page === 'booking-select') {
 
 		$featuredVehiclesRaw = $statement->fetchAll() ?: [];
 		$nowDateTime = new DateTimeImmutable('now');
+		$availableFeaturedVehicles = [];
 		foreach ($featuredVehiclesRaw as $vehicleRow) {
 			$effectiveStatus = $resolveEffectiveVehicleStatus($vehicleRow, $nowDateTime);
 			if ($effectiveStatus !== 'available') {
@@ -5736,11 +6538,76 @@ if ($page === 'booking-select') {
 			}
 
 			$vehicleRow['status'] = $effectiveStatus;
+			$availableFeaturedVehicles[] = $vehicleRow;
 			$featuredVehicles[] = $vehicleRow;
 			if (count($featuredVehicles) >= 3) {
 				break;
 			}
 		}
+
+		// Home recommendations should still appear even if the selected category has too few vehicles.
+		// Therefore this query collects available vehicles across all categories for the recommendation section.
+		$availableRecommendationVehicles = [];
+		$recommendationStmt = $pdo->query(
+			'SELECT
+				v.*,
+				c.name AS category_name,
+				COALESCE(vehicle_popularity.booking_count, 0) AS booking_count,
+				active_booking.status AS active_booking_status,
+				active_booking.pickup_datetime AS active_pickup_datetime,
+				active_booking.return_datetime AS active_return_datetime,
+				upcoming_booking.pickup_datetime AS upcoming_pickup_datetime
+			FROM vehicles v
+			INNER JOIN categories c ON c.id = v.category_id
+			LEFT JOIN (
+				SELECT vehicle_id, COUNT(*) AS booking_count
+				FROM bookings
+				WHERE status IN ("reserved", "on_trip", "overdue", "completed")
+				GROUP BY vehicle_id
+			) vehicle_popularity ON vehicle_popularity.vehicle_id = v.id
+			LEFT JOIN bookings active_booking ON active_booking.id = (
+				SELECT b1.id
+				FROM bookings b1
+				WHERE b1.vehicle_id = v.id
+					AND b1.status IN ("reserved", "on_trip", "overdue")
+				ORDER BY COALESCE(b1.updated_at, b1.created_at) DESC, b1.id DESC
+				LIMIT 1
+			)
+			LEFT JOIN bookings upcoming_booking ON upcoming_booking.id = (
+				SELECT b2.id
+				FROM bookings b2
+				WHERE b2.vehicle_id = v.id
+					AND b2.status = "reserved"
+					AND b2.pickup_datetime >= CURRENT_TIMESTAMP
+				ORDER BY b2.pickup_datetime ASC, b2.id ASC
+				LIMIT 1
+			)
+			WHERE v.deleted_at IS NULL
+			ORDER BY COALESCE(vehicle_popularity.booking_count, 0) DESC, v.price_per_day ASC
+			LIMIT 24'
+		);
+		foreach (($recommendationStmt->fetchAll() ?: []) as $vehicleRow) {
+			$effectiveStatus = $resolveEffectiveVehicleStatus($vehicleRow, $nowDateTime);
+			if ($effectiveStatus !== 'available') {
+				continue;
+			}
+			$vehicleRow['status'] = $effectiveStatus;
+			$availableRecommendationVehicles[] = $vehicleRow;
+		}
+
+		$sessionUser = $_SESSION['auth_user'] ?? [];
+		$homeUserId = is_array($sessionUser) && (($sessionUser['role'] ?? '') === 'user')
+			? (int) ($sessionUser['id'] ?? 0)
+			: 0;
+		$homeRecommendationProfile = ridex_recommendation_get_user_profile(
+			$pdo,
+			$homeUserId,
+			$selectedHomeVehicleType,
+			0,
+			0,
+			['cars', 'bikes', 'luxury']
+		);
+		$recommendedVehicles = ridex_recommendation_rank_vehicles($availableRecommendationVehicles, $homeRecommendationProfile, 3);
 	} catch (Throwable $exception) {
 		error_log('Featured vehicle query failed: ' . $exception->getMessage());
 		$featuredVehicles = [];
@@ -5750,6 +6617,7 @@ if ($page === 'booking-select') {
 	$view = 'home/index';
 	$viewData = [
 		'featuredVehicles' => $featuredVehicles,
+		'recommendedVehicles' => $recommendedVehicles,
 		'selectedHomeVehicleType' => $selectedHomeVehicleType,
 	];
 }

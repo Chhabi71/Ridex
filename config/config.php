@@ -102,7 +102,7 @@ if (!defined('DB_HOST')) {
 		'DATABASE_HOST',
 		'MYSQL_HOST',
 		'MYSQLHOST',
-	], $dbUrlParts['host'] ?? '127.0.0.1'));
+	], $dbUrlParts['host'] ?? 'localhost'));
 }
 
 if (!defined('DB_PORT')) {
@@ -111,7 +111,7 @@ if (!defined('DB_PORT')) {
 		'DATABASE_PORT',
 		'MYSQL_PORT',
 		'MYSQLPORT',
-	], $dbUrlParts['port'] ?? 3307));
+	], $dbUrlParts['port'] ?? 3306));
 }
 
 if (!defined('DB_NAME')) {

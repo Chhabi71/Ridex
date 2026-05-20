@@ -1,0 +1,19 @@
+/vendor/
+/node_modules/
+/.env
+/.env.*
+/logs/
+/var/
+/public/uploads/
+/public/js/vendor/
+/public/css/vendor/
+*.log
+*.cache
+/.vscode/
+/.idea/
+*.DS_Store
+Thumbs.db
+data/vehicles-json/.vehicles-sync.lock
+data/vehicles-json/.vehicles-sync-state.json
+/images of wireframewebsite flow/
+/docs/
