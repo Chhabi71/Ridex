@@ -149,6 +149,12 @@
         "[data-booking-track-return-location]",
       )
     : null;
+  var adminBookingTrackMapNode = adminBookingTrackModal
+    ? adminBookingTrackModal.querySelector("[data-single-booking-gps-map]")
+    : null;
+  var adminBookingSingleMap = null;
+  var adminBookingSingleMarker = null;
+  var adminBookingSingleRouteLine = null;
   // risk/safety display removed
 
   var adminDeleteBookingIdInput = adminDeleteBookingModal
@@ -196,8 +202,8 @@
   var formatBookingCurrency = function (rawValue) {
     var numericValue = Number.parseFloat(String(rawValue || "0"));
     return Number.isFinite(numericValue)
-      ? "$" + numericValue.toFixed(2)
-      : "$0.00";
+      ? "NRs " + numericValue.toFixed(2)
+      : "NRs 0.00";
   };
 
   var normalizeTrackText = function (rawValue, fallbackValue) {
@@ -223,6 +229,205 @@
 
     return Math.abs(latitude) > 0.00001 || Math.abs(longitude) > 0.00001;
   };
+
+  var escapeTrackHtml = function (value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  var buildTrackPopupHtml = function (trackNumber, trackCustomer, vehicleName, locationLabel) {
+    return (
+      '<div class="admin-booking-track-modal__popup">' +
+      '<strong>' + escapeTrackHtml(trackNumber || "Booking") + '</strong>' +
+      '<span>' + escapeTrackHtml(vehicleName || "Vehicle") + '</span>' +
+      '<span>' + escapeTrackHtml(trackCustomer || "Unknown customer") + '</span>' +
+      '<span>' + escapeTrackHtml(locationLabel || "Live GPS") + '</span>' +
+      '</div>'
+    );
+  };
+
+  var ensureSingleBookingMap = function () {
+    if (!(adminBookingTrackMapNode instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (typeof L === "undefined") {
+      return false;
+    }
+
+    adminBookingTrackMapNode.classList.add("is-leaflet-map");
+
+    if (adminBookingSingleMap) {
+      return true;
+    }
+
+    adminBookingSingleMap = L.map(adminBookingTrackMapNode, {
+      scrollWheelZoom: true,
+      zoomControl: true,
+    }).setView([27.7172, 85.3240], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(adminBookingSingleMap);
+
+    return true;
+  };
+
+  var renderSingleBookingMap = function (options) {
+    options = options || {};
+
+    if (!ensureSingleBookingMap()) {
+      return;
+    }
+
+    window.setTimeout(function () {
+      if (adminBookingSingleMap) {
+        adminBookingSingleMap.invalidateSize();
+      }
+    }, 80);
+
+    if (!hasTrackGpsSignal(options.latitude, options.longitude)) {
+      if (adminBookingSingleMarker) {
+        adminBookingSingleMap.removeLayer(adminBookingSingleMarker);
+        adminBookingSingleMarker = null;
+      }
+      if (adminBookingSingleRouteLine) {
+        adminBookingSingleMap.removeLayer(adminBookingSingleRouteLine);
+        adminBookingSingleRouteLine = null;
+      }
+      return;
+    }
+
+    var position = [options.latitude, options.longitude];
+    var popupHtml = buildTrackPopupHtml(
+      options.trackNumber,
+      options.trackCustomer,
+      options.vehicleName,
+      options.locationLabel,
+    );
+
+    var markerIcon = L.divIcon({
+      className: "admin-booking-track-modal__leaflet-marker-wrapper",
+      html: '<span class="admin-booking-track-modal__leaflet-marker"><span class="material-symbols-rounded">two_wheeler</span></span>',
+      iconSize: [42, 42],
+      iconAnchor: [21, 21],
+      popupAnchor: [0, -18],
+    });
+
+    if (adminBookingSingleMarker) {
+      adminBookingSingleMarker.setLatLng(position).setIcon(markerIcon).setPopupContent(popupHtml);
+    } else {
+      adminBookingSingleMarker = L.marker(position, { icon: markerIcon })
+        .addTo(adminBookingSingleMap)
+        .bindPopup(popupHtml);
+    }
+
+    if (adminBookingSingleRouteLine) {
+      adminBookingSingleMap.removeLayer(adminBookingSingleRouteLine);
+      adminBookingSingleRouteLine = null;
+    }
+
+    if (Array.isArray(options.route) && options.route.length > 1) {
+      var routeCoordinates = options.route
+        .filter(function (point) {
+          return point && typeof point.lat === "number" && typeof point.lng === "number";
+        })
+        .map(function (point) {
+          return [point.lat, point.lng];
+        });
+
+      if (routeCoordinates.length > 1) {
+        adminBookingSingleRouteLine = L.polyline(routeCoordinates, {
+          weight: 5,
+          opacity: 0.78,
+        }).addTo(adminBookingSingleMap);
+        adminBookingSingleMap.fitBounds(adminBookingSingleRouteLine.getBounds(), {
+          padding: [35, 35],
+          maxZoom: 15,
+        });
+      } else {
+        adminBookingSingleMap.setView(position, 15);
+      }
+    } else {
+      adminBookingSingleMap.setView(position, 15);
+    }
+
+    adminBookingSingleMarker.openPopup();
+  };
+
+  var hydrateTrackFromLiveFeed = function (triggerButton, basePayload) {
+    if (!(triggerButton instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!(adminBookingTrackMapNode instanceof HTMLElement)) {
+      return;
+    }
+
+    var feedUrl = adminBookingTrackMapNode.getAttribute("data-feed-url") || "ajax/gps-live-feed.php";
+    var bookingId = Number.parseInt(triggerButton.getAttribute("data-booking-track-booking-id") || "0", 10);
+    var vehicleId = Number.parseInt(triggerButton.getAttribute("data-booking-track-vehicle-id") || "0", 10);
+
+    fetch(feedUrl, { headers: { Accept: "application/json" } })
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (data) {
+        var vehicles = Array.isArray(data && data.vehicles) ? data.vehicles : [];
+        var vehicle = vehicles.find(function (item) {
+          return bookingId > 0 && Number(item.bookingId) === bookingId;
+        }) || vehicles.find(function (item) {
+          return vehicleId > 0 && Number(item.vehicleId) === vehicleId;
+        });
+
+        if (!vehicle || !vehicle.hasGpsSignal || typeof vehicle.lat !== "number" || typeof vehicle.lng !== "number") {
+          return;
+        }
+
+        var locationLabel = "" + vehicle.lat.toFixed(5) + ", " + vehicle.lng.toFixed(5);
+        var mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(vehicle.lat.toFixed(6) + "," + vehicle.lng.toFixed(6));
+
+        triggerButton.setAttribute("data-booking-track-latitude", String(vehicle.lat));
+        triggerButton.setAttribute("data-booking-track-longitude", String(vehicle.lng));
+        triggerButton.setAttribute("data-booking-track-location-label", locationLabel);
+        triggerButton.setAttribute("data-booking-track-map-url", mapsUrl);
+        triggerButton.setAttribute("data-booking-track-has-signal", "true");
+
+        if (adminBookingTrackLocationLabelNode instanceof HTMLElement) {
+          adminBookingTrackLocationLabelNode.textContent = locationLabel;
+        }
+
+        if (adminBookingTrackOpenMapsAction instanceof HTMLAnchorElement) {
+          adminBookingTrackOpenMapsAction.href = mapsUrl;
+          adminBookingTrackOpenMapsAction.classList.remove("is-disabled");
+          adminBookingTrackOpenMapsAction.removeAttribute("aria-disabled");
+          adminBookingTrackOpenMapsAction.removeAttribute("tabindex");
+        }
+
+        if (adminBookingTrackMapEmptyNode instanceof HTMLElement) {
+          adminBookingTrackMapEmptyNode.hidden = true;
+        }
+
+        renderSingleBookingMap({
+          latitude: vehicle.lat,
+          longitude: vehicle.lng,
+          trackNumber: vehicle.bookingNumber || basePayload.trackNumber,
+          trackCustomer: vehicle.customerName || basePayload.trackCustomer,
+          vehicleName: vehicle.vehicleName || basePayload.vehicleName,
+          locationLabel: locationLabel,
+          route: Array.isArray(vehicle.route) ? vehicle.route : [],
+        });
+      })
+      .catch(function () {
+        // Keep the coordinate snapshot already passed from the booking row.
+      });
+  };
+
 
   var calculateBookingTaxesAndTotal = function (
     durationPrice,
@@ -324,6 +529,8 @@
       // risk/safety attributes removed
       adminBookingTrackAction.removeAttribute("data-booking-track-map-url");
       adminBookingTrackAction.removeAttribute("data-booking-track-has-signal");
+      adminBookingTrackAction.removeAttribute("data-booking-track-vehicle-id");
+      adminBookingTrackAction.removeAttribute("data-booking-track-booking-id");
     }
 
     if (adminBookingApproveForm instanceof HTMLElement) {
@@ -340,7 +547,7 @@
     }
 
     if (adminBookingLateFeePreview instanceof HTMLElement) {
-      adminBookingLateFeePreview.textContent = "Late fee: $0.00 (0h x $10)";
+      adminBookingLateFeePreview.textContent = "Late fee: NRs 0.00 (0h x $10)";
       adminBookingLateFeePreview.hidden = true;
     }
   };
@@ -534,6 +741,13 @@
       triggerButton.getAttribute("data-booking-customer-email") || "N/A";
     var driverId =
       triggerButton.getAttribute("data-booking-driver-id") || "N/A";
+    var vehicleId = Number.parseInt(
+      triggerButton.getAttribute("data-booking-vehicle-id") || "0",
+      10,
+    );
+    if (!Number.isFinite(vehicleId)) {
+      vehicleId = 0;
+    }
     var vehicleName =
       triggerButton.getAttribute("data-booking-vehicle-name") || "Vehicle";
     var vehicleType =
@@ -837,7 +1051,13 @@
         );
         adminBookingTrackAction.setAttribute(
           "data-booking-track-location",
-          "Unavailable",
+          triggerButton.getAttribute("data-booking-track-location-label") ||
+            (trackHasSignal ? "Live GPS available" : "No GPS signal"),
+        );
+        adminBookingTrackAction.setAttribute(
+          "data-booking-track-location-label",
+          triggerButton.getAttribute("data-booking-track-location-label") ||
+            (trackHasSignal ? "Live GPS available" : "No GPS signal"),
         );
         adminBookingTrackAction.setAttribute(
           "data-booking-track-pickup",
@@ -854,6 +1074,14 @@
         adminBookingTrackAction.setAttribute(
           "data-booking-track-has-signal",
           trackHasSignal ? "true" : "false",
+        );
+        adminBookingTrackAction.setAttribute(
+          "data-booking-track-vehicle-id",
+          vehicleId > 0 ? String(vehicleId) : "",
+        );
+        adminBookingTrackAction.setAttribute(
+          "data-booking-track-booking-id",
+          bookingId > 0 ? String(bookingId) : "",
         );
         if (trackLatitude !== null) {
           adminBookingTrackAction.setAttribute(
@@ -940,7 +1168,11 @@
       triggerButton.getAttribute("data-booking-track-customer"),
       "Unknown",
     );
-    var trackLocation = "Unavailable";
+    var trackLocation = normalizeTrackText(
+      triggerButton.getAttribute("data-booking-track-location-label") ||
+        triggerButton.getAttribute("data-booking-track-location"),
+      "No GPS signal",
+    );
     var trackPickup = normalizeTrackText(
       triggerButton.getAttribute("data-booking-track-pickup"),
       "Unavailable",
@@ -956,6 +1188,19 @@
       triggerButton,
       "data-booking-track-has-signal",
     );
+    var trackLatitude = parseTrackCoordinate(
+      triggerButton.getAttribute("data-booking-track-latitude") ||
+        triggerButton.getAttribute("data-booking-gps-latitude"),
+    );
+    var trackLongitude = parseTrackCoordinate(
+      triggerButton.getAttribute("data-booking-track-longitude") ||
+        triggerButton.getAttribute("data-booking-gps-longitude"),
+    );
+    var trackVehicleName = normalizeTrackText(
+      triggerButton.getAttribute("data-booking-vehicle-name"),
+      "Vehicle",
+    );
+    hasSignal = hasSignal || hasTrackGpsSignal(trackLatitude, trackLongitude);
 
     if (adminBookingTrackNumberNode instanceof HTMLElement) {
       adminBookingTrackNumberNode.textContent = trackNumber;
@@ -1008,6 +1253,22 @@
     if (adminBookingTrackReturnPinNode instanceof HTMLElement) {
       adminBookingTrackReturnPinNode.hidden = !hasSignal;
     }
+
+    renderSingleBookingMap({
+      latitude: trackLatitude,
+      longitude: trackLongitude,
+      trackNumber: trackNumber,
+      trackCustomer: trackCustomer,
+      vehicleName: trackVehicleName,
+      locationLabel: trackLocation,
+      route: [],
+    });
+
+    hydrateTrackFromLiveFeed(triggerButton, {
+      trackNumber: trackNumber,
+      trackCustomer: trackCustomer,
+      vehicleName: trackVehicleName,
+    });
   };
 
   var hydrateDeleteBookingModal = function (triggerButton) {
@@ -1035,6 +1296,24 @@
       adminDeleteBookingNameNode.textContent = bookingLabel;
     }
   };
+
+  // Track stays inside All Bookings and opens the single-vehicle GPS modal.
+  // The separate Live Tracking page remains only for viewing all vehicles together.
+
+  if (adminBookingTrackAction instanceof HTMLElement) {
+    adminBookingTrackAction.addEventListener("click", function (event) {
+      // Keep single-vehicle tracking inside the All Bookings page.
+      // This prevents any accidental navigation to the all-vehicles Live Tracking page.
+      event.preventDefault();
+
+      if (adminBookingTrackAction.classList.contains("is-disabled") || adminBookingTrackAction.hidden) {
+        event.stopPropagation();
+        return;
+      }
+
+      hydrateBookingTrackModal(adminBookingTrackAction);
+    });
+  }
 
   window.RidexBookingModals = {
     initAdminBookingReturnTimePicker: initAdminBookingReturnTimePicker,

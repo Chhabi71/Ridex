@@ -56,8 +56,10 @@ if (!function_exists('ridex_sync_booking_lifecycle_statuses')) {
 						WHEN payment_status IN ("pending", "cancelled", "unpaid") THEN payment_status
 						ELSE payment_status
 					END
-				WHEN status IN ("on_trip", "overdue", "completed") THEN "paid"
-				WHEN payment_method = "khalti" THEN "paid"
+				WHEN status IN ("on_trip", "overdue", "completed") AND payment_method = "khalti" AND payment_status = "paid" THEN "paid"
+				WHEN status IN ("on_trip", "overdue", "completed") AND payment_method = "pay_on_arrival" THEN "pending"
+				WHEN payment_method = "khalti" AND payment_status = "paid" THEN "paid"
+				WHEN payment_method = "khalti" THEN "pending"
 				WHEN payment_method = "pay_on_arrival" THEN "pending"
 				ELSE payment_status
 			END';
@@ -71,7 +73,7 @@ if (!function_exists('ridex_sync_booking_lifecycle_statuses')) {
 
 			$paidAmountCaseSql = 'CASE
 				WHEN payment_status = "paid" THEN GREATEST(paid_amount, total_amount)
-				WHEN payment_method = "pay_on_arrival" AND payment_status IN ("pending", "unpaid", "cancelled") THEN 0
+				WHEN payment_status IN ("pending", "unpaid", "cancelled") THEN 0
 				ELSE paid_amount
 			END';
 

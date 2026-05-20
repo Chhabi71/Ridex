@@ -11,6 +11,8 @@ $userLoginError = isset($userLoginError) ? trim((string) $userLoginError) : '';
 $userLoginIdentifier = isset($userLoginIdentifier) ? trim((string) $userLoginIdentifier) : '';
 $userLoginIdentifierInvalid = isset($userLoginIdentifierInvalid) ? (bool) $userLoginIdentifierInvalid : false;
 $userLoginPasswordInvalid = isset($userLoginPasswordInvalid) ? (bool) $userLoginPasswordInvalid : false;
+$userLoginSuccess = isset($userLoginSuccess) ? trim((string) $userLoginSuccess) : '';
+$userLoginCanResendVerification = isset($userLoginCanResendVerification) ? (bool) $userLoginCanResendVerification : false;
 $userPostAuthRedirect = isset($userPostAuthRedirect) ? trim((string) $userPostAuthRedirect) : 'index.php';
 if ($userPostAuthRedirect === '') {
 	$userPostAuthRedirect = 'index.php';
@@ -27,7 +29,7 @@ $adminSessionUser = isset($_SESSION['auth_user']) && is_array($_SESSION['auth_us
 	: [];
 $isAdminSession = (($adminSessionUser['role'] ?? '') === 'admin');
 $isUserSession = (($adminSessionUser['role'] ?? '') === 'user');
-$userLoginShouldAutoOpen = $userLoginError !== '';
+$userLoginShouldAutoOpen = $userLoginError !== '' || $userLoginSuccess !== '';
 $userRegisterShouldAutoOpen = !empty($userRegisterErrors);
 $userRegisterShouldOpenSuccess = $userRegisterSuccessEmail !== '';
 $userRegisterProvinceOptions = ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'];
@@ -251,11 +253,11 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 
 				<h3 class="user-booking-bill-modal__heading">Price details</h3>
 
-				<div class="user-booking-bill-modal__line"><span>Price per day</span><span>$<?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['price_per_day'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
-				<div class="user-booking-bill-modal__line"><span>Price for period</span><span>$<?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['price_for_days'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
-				<div class="user-booking-bill-modal__line"><span>Drop charge</span><span>$<?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['drop_charge'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
-				<div class="user-booking-bill-modal__line"><span>Taxes &amp; Fees</span><span>$<?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['taxes_and_fees'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
-				<div class="user-booking-bill-modal__total"><span>$<?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['total_amount'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
+				<div class="user-booking-bill-modal__line"><span>Price per day</span><span>NRs <?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['price_per_day'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
+				<div class="user-booking-bill-modal__line"><span>Price for period</span><span>NRs <?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['price_for_days'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
+				<div class="user-booking-bill-modal__line"><span>Drop charge</span><span>NRs <?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['drop_charge'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
+				<div class="user-booking-bill-modal__line"><span>Taxes &amp; Fees</span><span>NRs <?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['taxes_and_fees'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
+				<div class="user-booking-bill-modal__total"><span>NRs <?= htmlspecialchars(number_format((float) ((int) ($bookingReceiptModalData['total_amount'] ?? 0)), 2), ENT_QUOTES, 'UTF-8') ?></span></div>
 
 				<div class="user-booking-bill-modal__actions">
 					<a
@@ -352,9 +354,21 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 				<?php if ($userLoginError !== ''): ?>
 					<p class="user-login-form__error" role="alert"><?= htmlspecialchars($userLoginError, ENT_QUOTES, 'UTF-8') ?></p>
 				<?php endif; ?>
+				<?php if ($userLoginSuccess !== ''): ?>
+					<p class="user-login-form__success" role="status"><?= htmlspecialchars($userLoginSuccess, ENT_QUOTES, 'UTF-8') ?></p>
+				<?php endif; ?>
 
 				<button class="user-login-form__submit" type="submit">Log In</button>
 			</form>
+
+			<?php if ($userLoginCanResendVerification): ?>
+				<form class="user-login-form user-login-form--resend" method="post" action="index.php" autocomplete="off">
+					<input type="hidden" name="action" value="user-resend-verification-email" />
+					<input type="hidden" name="user_identifier" value="<?= htmlspecialchars($userLoginIdentifier, ENT_QUOTES, 'UTF-8') ?>" />
+					<input type="hidden" name="post_auth_redirect" value="<?= htmlspecialchars($userPostAuthRedirect, ENT_QUOTES, 'UTF-8') ?>" />
+					<button class="user-login-form__resend" type="submit">Resend Verification Email</button>
+				</form>
+			<?php endif; ?>
 
 			<button class="user-login-form__create-account" type="button" data-modal-target="user-register-personal-modal">Create Account</button>
 		</div>
@@ -386,7 +400,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 
 		<div class="user-reset-modal__content">
 			<h2 class="user-reset-modal__title" id="user-forgot-email-title">Forgot Password?</h2>
-			<p class="user-reset-modal__text">Enter your registered email to continue account verification.</p>
+			<p class="user-reset-modal__text">Enter your registered email to start the password reset process.</p>
 
 			<label class="user-login-form__label" for="user-forgot-email-input">Email</label>
 			<input
@@ -435,7 +449,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 
 		<div class="user-reset-modal__content">
 			<h2 class="user-reset-modal__title" id="user-forgot-driver-title">Driver ID Verification</h2>
-			<p class="user-reset-modal__text">Enter your Driver ID to verify and send a reset email.</p>
+			<p class="user-reset-modal__text">Enter your Driver ID to verify your account and send a reset link.</p>
 
 			<label class="user-login-form__label" for="user-forgot-driver-id-input">Driver ID</label>
 			<input
@@ -491,7 +505,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 				Please check your inbox and spam folder.
 			</p>
 
-			<button class="user-login-form__submit" type="button" data-modal-target="user-login-modal">Resend Email</button>
+			<button class="user-login-form__submit" type="button" data-modal-target="user-forgot-email-modal">Send Another Reset Link</button>
 		</div>
 
 		<button class="menu-modal__back admin-modal__back" type="button" aria-label="Back to previous view" data-modal-back>
@@ -1081,6 +1095,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 					</div>
 				</dl>
 
+				<a class="admin-profile-modal__dashboard" href="index.php?page=admin-dashboard">Admin Dashboard</a>
 				<button class="admin-profile-modal__logout" type="button" data-modal-target="admin-logout-modal">Logout</button>
 			</div>
 
@@ -1812,6 +1827,10 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 
 				<button class="admin-login-form__forgot" type="button" data-modal-target="admin-reset-modal">Forgot your password?</button>
 
+				<?php if (($adminLoginSuccess ?? '') !== ''): ?>
+					<p class="admin-login-form__success" role="status"><?= htmlspecialchars($adminLoginSuccess, ENT_QUOTES, 'UTF-8') ?></p>
+				<?php endif; ?>
+
 				<?php if ($adminLoginError !== ''): ?>
 					<p class="admin-login-form__error" role="alert" data-admin-login-error><?= htmlspecialchars($adminLoginError, ENT_QUOTES, 'UTF-8') ?></p>
 				<?php endif; ?>
@@ -1826,7 +1845,7 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 	</section>
 </div>
 
-<?php // admin login: forgot-password confirmation modal ?>
+<?php // admin login: forgot-password email request modal ?>
 <div class="menu-modal admin-reset-modal" id="admin-reset-modal" hidden aria-hidden="true" data-modal-id="admin-reset-modal">
 	<div class="menu-modal__overlay" data-modal-close></div>
 
@@ -1847,12 +1866,29 @@ if (!in_array($bookingReceiptStatusVariant, ['paid', 'due'], true)) {
 		</header>
 
 		<div class="admin-reset-modal__content">
-			<span class="material-symbols-rounded admin-reset-modal__icon" aria-hidden="true">mail</span>
-			<h2 class="admin-reset-modal__title" id="admin-reset-title">Check your inbox</h2>
+			<span class="material-symbols-rounded admin-reset-modal__icon" aria-hidden="true">lock_reset</span>
+			<h2 class="admin-reset-modal__title" id="admin-reset-title">Reset Admin Password</h2>
 			<p class="admin-reset-modal__text">
-				You should receive an email in the next few minutes with a link to reset your password.
+				Enter the registered admin email address. RIDEX will send a secure reset link that expires after 1 hour.
 			</p>
-			<a class="admin-reset-modal__submit" href="index.php">Reset Password</a>
+
+			<form class="admin-login-form" method="post" action="index.php" autocomplete="off">
+				<input type="hidden" name="action" value="admin-forgot-password-request" />
+
+				<label class="admin-login-form__label" for="admin-reset-email-input">Admin Email</label>
+				<input
+					class="admin-login-form__input"
+					type="email"
+					id="admin-reset-email-input"
+					name="admin_reset_email"
+					placeholder="admin@example.com"
+					autocomplete="email"
+					required
+					value="<?= htmlspecialchars($adminLoginEmail ?? '', ENT_QUOTES, 'UTF-8') ?>"
+				/>
+
+				<button class="admin-reset-modal__submit" type="submit">Send Reset Link</button>
+			</form>
 		</div>
 
 		<button class="menu-modal__back admin-modal__back" type="button" aria-label="Back to previous view" data-modal-back>
